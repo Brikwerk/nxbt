@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>NXBT: Control Your Switch Locally or Remotely</title>
+    </head>
+    <body>
+        <script src="js/socket.io.js"></script>
+        <script type="text/javascript" charset="utf-8">
+            var socket = io();
+            socket.on('connect', function() {
+                let date = new Date();
+                socket.emit('message', {"timestamp": date.getTime()});
+            });
+        </script>
+    </body>
+</html>
