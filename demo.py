@@ -12,4 +12,4 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(1)
-        print(nxbt.get_state())
+        print(nxbt.get_state()[0])

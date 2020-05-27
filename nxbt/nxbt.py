@@ -60,7 +60,6 @@ class Nxbt():
         cm = ControllerManager(state)
 
         while True:
-
             try:
                 msg = task_queue.get_nowait()
             except queue.Empty:
@@ -122,17 +121,19 @@ class ControllerManager():
     def __init__(self, state):
 
         self.state = state
+        self.controller_resources = Manager()
         self.controller_states = []
         self.controller_queues = []
 
     def create_controller(self, index, controller_type, adapter_path):
 
         controller_queue = Queue()
-        controller_state = {
-            "state": "initializing",
-            "finished_macros": [],
-            "errors": False
-        }
+
+        controller_state = self.controller_resources.dict()
+        controller_state["state"] = "initializing"
+        controller_state["finished_macros"] = []
+        controller_state["errors"] = False
+
         self.state[index] = controller_state
         # Get the last parameter of the path, AKA the ID
         device_id = adapter_path.split("/")[-1]
