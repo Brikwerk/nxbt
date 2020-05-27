@@ -1,7 +1,7 @@
 """
 This is a quick and dirty script for recording input from a controller
 and dumping it into a "messages.txt" file. You'll need to input the
-devices Bluetooth MAC address manually and specify the type of
+device's Bluetooth MAC address manually and specify the type of
 controller before this script works.
 """
 

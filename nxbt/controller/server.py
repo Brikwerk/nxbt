@@ -23,20 +23,29 @@ class ControllerServer():
             self.controller_type,
             self.bt.address)
 
-    def run(self, reconnect_address=None):
+    def run(self, reconnect_address=None, state=None, task_queue=None):
         """Runs the mainloop of the controller server.
 
         :param reconnect_address: The Bluetooth MAC address of a
         previously connected to Nintendo Switch, defaults to None
         :type reconnect_address: string, optional
         """
+        
+        print(reconnect_address, state, task_queue)
+
+        if state:
+            state["state"] = "initializing"
 
         self.controller.setup()
 
         if reconnect_address:
-            itr, s_itr, ctrl, s_ctrl = self.reconnect(reconnect_address)
+            itr, s_itr, ctrl, s_ctrl = self.reconnect(
+                reconnect_address, state=state)
         else:
-            itr, s_itr, ctrl, s_ctrl = self.connect()
+            itr, s_itr, ctrl, s_ctrl = self.connect(state=state)
+
+        if state:
+            state["state"] = "connected"
 
         # Mainloop
         while True:
@@ -66,10 +75,13 @@ class ControllerServer():
             else:
                 time.sleep(1/60)
 
-    def connect(self):
+    def connect(self, state=None):
         """Configures as a specified controller, pairs with a Nintendo Switch,
         and creates/accepts sockets for communication with the Switch.
         """
+
+        if state:
+            state["state"] = "connecting"
 
         # Creating control and interrupt sockets
         s_ctrl = socket.socket(
@@ -120,8 +132,8 @@ class ControllerServer():
             self.protocol.process_commands(reply)
             msg = self.protocol.get_report()
 
-            #if reply:
-            #    print(format_msg_controller(msg))
+            # if reply:
+            #     print(format_msg_controller(msg))
 
             try:
                 itr.sendall(msg)
@@ -138,12 +150,15 @@ class ControllerServer():
 
         return itr, s_itr, ctrl, s_ctrl
 
-    def reconnect(self, reconnect_address):
+    def reconnect(self, reconnect_address, state=None):
         """Attempts to reconnect with a Switch at the given address.
 
         :param reconnect_address: The Bluetooth MAC address of the Switch
         :type reconnect_address: string
         """
+
+        if state:
+            state["state"] = "reconnecting"
 
         device_path = self.bt.find_device_by_address(reconnect_address)
         if not device_path:
