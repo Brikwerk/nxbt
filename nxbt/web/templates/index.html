@@ -11,6 +11,59 @@
                 let date = new Date();
                 socket.emit('message', {"timestamp": date.getTime()});
             });
+
+            socket.on('response', function(data) {
+                console.log(data)
+            });
+
+            socket.on('dateResponse', function(data) {
+                console.log(data)
+            });
+
+            window.addEventListener("gamepadconnected", function(e) {
+                let gp = navigator.getGamepads()[e.gamepad.index];
+                console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+                    gp.index, gp.id,
+                    gp.buttons.length, gp.axes.length);
+                
+                setInterval(function() {
+                    let gp = navigator.getGamepads()[e.gamepad.index];
+                    
+                    let axes = gp["axes"];
+                    let buttons = []
+                    for (let i = 0; i < gp["buttons"].length; i++) {
+                        let button = gp["buttons"][i];
+                        buttons.push({
+                            "pressed": button["pressed"],
+                        })
+                    }
+                    gpData = {
+                        "axes": gp["axes"],
+                        "buttons": {
+                            "B": gp["buttons"][0]["pressed"],
+                            "A": gp["buttons"][1]["pressed"],
+                            "Y": gp["buttons"][2]["pressed"],
+                            "X": gp["buttons"][3]["pressed"],
+                            "L": gp["buttons"][4]["pressed"],
+                            "R": gp["buttons"][5]["pressed"],
+                            "ZL": gp["buttons"][6]["pressed"],
+                            "ZR": gp["buttons"][7]["pressed"],
+                            "-": gp["buttons"][8]["pressed"],
+                            "+": gp["buttons"][9]["pressed"],
+                            "L_ANALOG": gp["buttons"][10]["pressed"],
+                            "R_ANALOG": gp["buttons"][11]["pressed"],
+                            "DPAD_UP": gp["buttons"][12]["pressed"],
+                            "DPAD_DOWN": gp["buttons"][13]["pressed"],
+                            "DPAD_LEFT": gp["buttons"][14]["pressed"],
+                            "DPAD_RIGHT": gp["buttons"][15]["pressed"],
+                            "HOME": gp["buttons"][16]["pressed"],
+                            "SCREENSHOT": gp["buttons"][17]["pressed"],
+                        }
+                    }
+
+                    socket.emit('input', JSON.stringify(gpData));
+                }, 1/60);
+            });
         </script>
     </body>
 </html>

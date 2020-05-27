@@ -1,6 +1,7 @@
-import time
+import json
 import os
 
+from ..nxbt import Nxbt
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import eventlet
@@ -9,6 +10,7 @@ import eventlet
 app = Flask(__name__,
             static_url_path='',
             static_folder='static',)
+nxbt = Nxbt()
 
 # Configuring/retrieving secret key
 secrets_path = os.path.join(
@@ -25,7 +27,7 @@ else:
 app.config['SECRET_KEY'] = secret_key
 
 # Starting socket server with Flask app
-sio = SocketIO(app)
+sio = SocketIO(app, cookie=False)
 
 
 @app.route('/')
@@ -36,7 +38,7 @@ def index():
 @sio.on('connect')
 def on_connect():
     print("Connected")
-    emit('my response', {'data': 'Connected'})
+    index = nxbt.create_controller()
 
 
 @sio.on('disconnect')
@@ -44,10 +46,15 @@ def on_disconnect():
     print("Disconnected")
 
 
-@sio.on('message')
-def handle_message(message):
-    print("Elapsed Time", (time.time()*1000) - message["timestamp"])
+@sio.on('create_controller')
+def on_create_controller():
+    pass
 
 
-if __name__ == "__main__":
+@sio.on('input')
+def handle_input(message):
+    print(json.loads(message))
+
+
+def start_web_app():
     eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
