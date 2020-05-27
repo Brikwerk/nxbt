@@ -6,31 +6,110 @@ import time
 import dbus
 
 
+SERVICE_NAME = "org.bluez"
+BLUEZ_OBJECT_PATH = "/org/bluez"
+ADAPTER_INTERFACE = SERVICE_NAME + ".Adapter1"
+PROFILEMANAGER_INTERFACE = SERVICE_NAME + ".ProfileManager1"
+DEVICE_INTERFACE = SERVICE_NAME + ".Device1"
+
+
+def find_object_path(bus, service_name, interface_name, object_name=None):
+    """Searches for a D-Bus object path that contains a specified interface
+    under a specified service.
+
+    :param bus: A DBus object used to access the DBus.
+    :type bus: DBus
+    :param service_name: The name of a D-Bus service to search for the
+    object path under.
+    :type service_name: string
+    :param interface_name: The name of a D-Bus interface to search for
+    within objects under the specified service.
+    :type interface_name: string
+    :param object_name: The name or ending of the object path,
+    defaults to None
+    :type object_name: string, optional
+    :return: The D-Bus object path or None, if no matching object
+    can be found
+    :rtype: string
+    """
+
+    manager = dbus.Interface(
+        bus.get_object(service_name, "/"),
+        "org.freedesktop.DBus.ObjectManager")
+
+    # Iterating over objects under the specified service
+    # and searching for the specified interface
+    for path, ifaces in manager.GetManagedObjects().items():
+        managed_interface = ifaces.get(interface_name)
+        if managed_interface is None:
+            continue
+        # If the object name wasn't specified or it matches
+        # the interface address or the path ending
+        elif (not object_name or
+                object_name == managed_interface["Address"] or
+                path.endswith(object_name)):
+            obj = bus.get_object(service_name, path)
+            return dbus.Interface(obj, interface_name).object_path
+
+    return None
+
+
+def find_objects(bus, service_name, interface_name):
+    """Searches for D-Bus objects that contain a specified interface
+    under a specified service.
+
+    :param bus: A DBus object used to access the DBus.
+    :type bus: DBus
+    :param service_name: The name of a D-Bus service to search for the
+    object path under.
+    :type service_name: string
+    :param interface_name: The name of a D-Bus interface to search for
+    within objects under the specified service.
+    :type interface_name: string
+    :return: The D-Bus object paths matching the arguments
+    :rtype: array
+    """
+
+    manager = dbus.Interface(
+        bus.get_object(service_name, "/"),
+        "org.freedesktop.DBus.ObjectManager")
+    paths = []
+
+    # Iterating over objects under the specified service
+    # and searching for the specified interface within them
+    for path, ifaces in manager.GetManagedObjects().items():
+        managed_interface = ifaces.get(interface_name)
+        if managed_interface is None:
+            continue
+        else:
+            obj = bus.get_object(service_name, path)
+            path = str(dbus.Interface(obj, interface_name).object_path)
+            paths.append(path)
+
+    return paths
+
+
 class BlueZ():
     """Exposes the BlueZ D-Bus API as a Python object.
     """
-
-    SERVICE_NAME = "org.bluez"
-    BLUEZ_OBJECT_PATH = "/org/bluez"
-    ADAPTER_INTERFACE = SERVICE_NAME + ".Adapter1"
-    PROFILEMANAGER_INTERFACE = SERVICE_NAME + ".ProfileManager1"
-    DEVICE_INTERFACE = SERVICE_NAME + ".Device1"
 
     def __init__(self, device_id="hci0"):
         self.bus = dbus.SystemBus()
 
         # Try to find the default adapter (hci0) or a user specified adapter
-        self.device_path = self.find_object_path(
-            self.SERVICE_NAME,
-            self.ADAPTER_INTERFACE,
+        self.device_path = find_object_path(
+            self.bus,
+            SERVICE_NAME,
+            ADAPTER_INTERFACE,
             object_name=device_id)
 
         # If we weren't able to find an adapter with the specified ID,
         # try to find any usable Bluetooth adapter
         if self.device_path is None:
-            self.device_path = self.find_object_path(
-                self.SERVICE_NAME,
-                self.ADAPTER_INTERFACE)
+            self.device_path = find_object_path(
+                self.bus,
+                SERVICE_NAME,
+                ADAPTER_INTERFACE)
 
         # If we aren't able to find an adapter still
         if self.device_path is None:
@@ -40,7 +119,7 @@ class BlueZ():
         print(f"Using adapter under object path: {self.device_path}")
         self.device = dbus.Interface(
             self.bus.get_object(
-                self.SERVICE_NAME,
+                SERVICE_NAME,
                 self.device_path),
             "org.freedesktop.DBus.Properties")
 
@@ -51,84 +130,14 @@ class BlueZ():
 
         # Load the ProfileManager interface
         self.profile_manager = dbus.Interface(self.bus.get_object(
-            self.SERVICE_NAME, self.BLUEZ_OBJECT_PATH),
-            self.PROFILEMANAGER_INTERFACE)
+            SERVICE_NAME, BLUEZ_OBJECT_PATH),
+            PROFILEMANAGER_INTERFACE)
 
         self.adapter = dbus.Interface(
             self.bus.get_object(
-                self.SERVICE_NAME,
+                SERVICE_NAME,
                 self.device_path),
-            self.ADAPTER_INTERFACE)
-
-    def find_object_path(self, service_name, interface_name, object_name=None):
-        """Searches for a D-Bus object path that contains a specified interface
-        under a specified service.
-
-        :param service_name: The name of a D-Bus service to search for the
-        object path under.
-        :type service_name: string
-        :param interface_name: The name of a D-Bus interface to search for
-        within objects under the specified service.
-        :type interface_name: string
-        :param object_name: The name or ending of the object path,
-        defaults to None
-        :type object_name: string, optional
-        :return: The D-Bus object path or None, if no matching object
-        can be found
-        :rtype: string
-        """
-
-        manager = dbus.Interface(
-            self.bus.get_object(service_name, "/"),
-            "org.freedesktop.DBus.ObjectManager")
-
-        # Iterating over objects under the specified service
-        # and searching for the specified interface
-        for path, ifaces in manager.GetManagedObjects().items():
-            managed_interface = ifaces.get(interface_name)
-            if managed_interface is None:
-                continue
-            # If the object name wasn't specified or it matches
-            # the interface address or the path ending
-            elif (not object_name or
-                    object_name == managed_interface["Address"] or
-                    path.endswith(object_name)):
-                obj = self.bus.get_object(service_name, path)
-                return dbus.Interface(obj, interface_name).object_path
-
-        return None
-
-    def find_objects(self, service_name, interface_name):
-        """Searches for D-Bus objects that contain a specified interface
-        under a specified service.
-
-        :param service_name: The name of a D-Bus service to search for the
-        object path under.
-        :type service_name: string
-        :param interface_name: The name of a D-Bus interface to search for
-        within objects under the specified service.
-        :type interface_name: string
-        :return: The D-Bus object paths matching the arguments
-        :rtype: array
-        """
-
-        manager = dbus.Interface(
-            self.bus.get_object(service_name, "/"),
-            "org.freedesktop.DBus.ObjectManager")
-        paths = []
-
-        # Iterating over objects under the specified service
-        # and searching for the specified interface within them
-        for path, ifaces in manager.GetManagedObjects().items():
-            managed_interface = ifaces.get(interface_name)
-            if managed_interface is None:
-                continue
-            else:
-                obj = self.bus.get_object(service_name, path)
-                path = str(dbus.Interface(obj, interface_name).object_path)
-                paths.append(path)
-
-        return paths
+            ADAPTER_INTERFACE)
 
     @property
     def address(self):
@@ -138,7 +147,7 @@ class BlueZ():
         :rtype: string
         """
 
-        return self.device.Get(self.ADAPTER_INTERFACE, "Address").upper()
+        return self.device.Get(ADAPTER_INTERFACE, "Address").upper()
 
     @property
     def name(self):
@@ -148,7 +157,7 @@ class BlueZ():
         :rtype: string
         """
 
-        return self.device.Get(self.ADAPTER_INTERFACE, "Name")
+        return self.device.Get(ADAPTER_INTERFACE, "Name")
 
     @property
     def alias(self):
@@ -160,7 +169,7 @@ class BlueZ():
         :rtype: string
         """
 
-        return self.device.Get(self.ADAPTER_INTERFACE, "Alias")
+        return self.device.Get(ADAPTER_INTERFACE, "Alias")
 
     def set_alias(self, value):
         """Asynchronously sets the alias of the Bluetooth adapter.
@@ -171,7 +180,7 @@ class BlueZ():
         :type value: string
         """
 
-        self.device.Set(self.ADAPTER_INTERFACE, "Alias", value)
+        self.device.Set(ADAPTER_INTERFACE, "Alias", value)
 
     @property
     def pairable(self):
@@ -182,7 +191,7 @@ class BlueZ():
         :rtype: boolean
         """
 
-        return bool(self.device.Get(self.ADAPTER_INTERFACE, "Pairable"))
+        return bool(self.device.Get(ADAPTER_INTERFACE, "Pairable"))
 
     def set_pairable(self, value):
         """Sets the pariable boolean status of the Bluetooth adapter.
@@ -193,7 +202,7 @@ class BlueZ():
         """
 
         dbus_value = dbus.Boolean(value)
-        self.device.Set(self.ADAPTER_INTERFACE, "Pairable", dbus_value)
+        self.device.Set(ADAPTER_INTERFACE, "Pairable", dbus_value)
 
     @property
     def pairable_timeout(self):
@@ -204,7 +213,7 @@ class BlueZ():
         :rtype: int
         """
 
-        return self.device.Get(self.ADAPTER_INTERFACE, "PairableTimeout")
+        return self.device.Get(ADAPTER_INTERFACE, "PairableTimeout")
 
     def set_pairable_timeout(self, value):
         """Sets the timeout time (in seconds) for the pairable property.
@@ -214,7 +223,7 @@ class BlueZ():
         """
 
         dbus_value = dbus.UInt32(value)
-        self.device.Set(self.ADAPTER_INTERFACE, "PairableTimeout", dbus_value)
+        self.device.Set(ADAPTER_INTERFACE, "PairableTimeout", dbus_value)
 
     @property
     def discoverable(self):
@@ -224,7 +233,7 @@ class BlueZ():
         :rtype: boolean
         """
 
-        return bool(self.device.Get(self.ADAPTER_INTERFACE, "Discoverable"))
+        return bool(self.device.Get(ADAPTER_INTERFACE, "Discoverable"))
 
     def set_discoverable(self, value):
         """Sets the discoverable boolean status of the Bluetooth adapter.
@@ -235,7 +244,7 @@ class BlueZ():
         """
 
         dbus_value = dbus.Boolean(value)
-        self.device.Set(self.ADAPTER_INTERFACE, "Discoverable", dbus_value)
+        self.device.Set(ADAPTER_INTERFACE, "Discoverable", dbus_value)
 
     @property
     def discoverable_timeout(self):
@@ -246,7 +255,7 @@ class BlueZ():
         :rtype: int
         """
 
-        return self.device.Get(self.ADAPTER_INTERFACE, "DiscoverableTimeout")
+        return self.device.Get(ADAPTER_INTERFACE, "DiscoverableTimeout")
 
     def set_discoverable_timeout(self, value):
         """Sets the discoverable time (in seconds) for the discoverable
@@ -259,7 +268,7 @@ class BlueZ():
 
         dbus_value = dbus.UInt32(value)
         self.device.Set(
-            self.ADAPTER_INTERFACE,
+            ADAPTER_INTERFACE,
             "DiscoverableTimeout",
             dbus_value)
 
@@ -322,7 +331,7 @@ class BlueZ():
         :rtype: boolean
         """
 
-        return bool(self.device.Get(self.ADAPTER_INTERFACE, "Powered"))
+        return bool(self.device.Get(ADAPTER_INTERFACE, "Powered"))
 
     def set_powered(self, value):
         """Switches the adapter on or off.
@@ -332,7 +341,7 @@ class BlueZ():
         """
 
         dbus_value = dbus.Boolean(value)
-        self.device.Set(self.ADAPTER_INTERFACE, "Powered", dbus_value)
+        self.device.Set(ADAPTER_INTERFACE, "Powered", dbus_value)
 
     def register_profile(self, profile_path, uuid, opts):
         """Registers an SDP record on the BlueZ SDP server.
@@ -382,14 +391,14 @@ class BlueZ():
 
         self.device = dbus.Interface(
             self.bus.get_object(
-                self.SERVICE_NAME,
+                SERVICE_NAME,
                 self.device_path),
             "org.freedesktop.DBus.Properties")
         self.profile_manager = dbus.Interface(
             self.bus.get_object(
-                self.SERVICE_NAME,
-                self.BLUEZ_OBJECT_PATH),
-            self.PROFILEMANAGER_INTERFACE)
+                SERVICE_NAME,
+                BLUEZ_OBJECT_PATH),
+            PROFILEMANAGER_INTERFACE)
 
     def toggle_input_plugin(self, toggle):
         """Enables or disables the BlueZ input plugin. Requires
@@ -464,14 +473,14 @@ class BlueZ():
         """
 
         bluez_objects = dbus.Interface(
-            self.bus.get_object(self.SERVICE_NAME, "/"),
+            self.bus.get_object(SERVICE_NAME, "/"),
             "org.freedesktop.DBus.ObjectManager")
 
         devices = {}
         objects = bluez_objects.GetManagedObjects()
         for path, interfaces in list(objects.items()):
-            if self.DEVICE_INTERFACE in interfaces:
-                devices[str(path)] = interfaces[self.DEVICE_INTERFACE]
+            if DEVICE_INTERFACE in interfaces:
+                devices[str(path)] = interfaces[DEVICE_INTERFACE]
 
         return devices
 
@@ -556,18 +565,18 @@ class BlueZ():
 
         device = dbus.Interface(
             self.bus.get_object(
-                self.SERVICE_NAME,
+                SERVICE_NAME,
                 device_path),
-            self.DEVICE_INTERFACE)
+            DEVICE_INTERFACE)
         device.Pair()
 
     def connect_device(self, device_path):
 
         device = dbus.Interface(
             self.bus.get_object(
-                self.SERVICE_NAME,
+                SERVICE_NAME,
                 device_path),
-            self.DEVICE_INTERFACE)
+            DEVICE_INTERFACE)
         try:
             device.Connect()
         except dbus.exceptions.DBusException:
@@ -582,7 +591,7 @@ class BlueZ():
         """
 
         self.adapter.RemoveDevice(
-            self.bus.get_object(self.SERVICE_NAME, path))
+            self.bus.get_object(SERVICE_NAME, path))
 
     def find_device_by_address(self, address):
         """Finds the D-Bus path to a device that contains the
@@ -595,16 +604,17 @@ class BlueZ():
         """
 
         # Find all connected/paired/discovered devices
-        devices = self.find_objects(
-            self.SERVICE_NAME,
-            self.DEVICE_INTERFACE)
+        devices = find_objects(
+            self.bus,
+            SERVICE_NAME,
+            DEVICE_INTERFACE)
         for path in devices:
             # Get the device's address and paired status
             device_props = dbus.Interface(
-                self.bus.get_object(self.SERVICE_NAME, path),
+                self.bus.get_object(SERVICE_NAME, path),
                 "org.freedesktop.DBus.Properties")
             device_addr = device_props.Get(
-                self.DEVICE_INTERFACE,
+                DEVICE_INTERFACE,
                 "Address").upper()
 
             # Check for an address match
