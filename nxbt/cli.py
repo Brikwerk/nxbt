@@ -1,2 +1,5 @@
+from .web import start_web_app
+
+
 def main():
-    raise NotImplementedError()
+    start_web_app()
