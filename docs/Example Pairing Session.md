@@ -748,12 +748,13 @@ Subcommand: 0x90 0x10 0x3D 0x60 0x00 0x00 0x19 0xD5 0xA4 0x43 0xA4 0xE7 0x87 0x2
 | 1 | Subcommand reply |
 | 5-2 | SPI memory address (Little Endian) |
 | 6 | Read length |
-| 7-25 | Stick factory calibration |
+| 7-24 | Stick factory calibration |
+| 25 | Spacer byte (always 0xFF) |
 | 26-31 | Controller colours |
 
 #### Stick Factory Calibration
 
-Byte 7-15 comprises the left stick calibration data. Byte 16-25 comprises the
+Byte 7-15 comprises the left stick calibration data. Byte 16-24 comprises the
 right stick data. These 9 bytes are used to generate 6 uint16 values which are
 used to calculate the stick dead zones and min/max x/y values.
 

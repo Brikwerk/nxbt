@@ -66,4 +66,4 @@ class Controller():
         except dbus.exceptions.DBusException:
             pass
 
-        self.bt.set_device_class(self.GAMEPAD_CLASS)
+        # self.bt.set_device_class(self.GAMEPAD_CLASS)

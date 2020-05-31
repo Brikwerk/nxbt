@@ -42,7 +42,8 @@ class ControllerProtocol():
     }
     VIBRATOR_BYTES = [0xA0, 0xB0, 0xC0, 0x90]
 
-    def __init__(self, controller_type, bt_address, report_size=50):
+    def __init__(self, controller_type, bt_address, report_size=50,
+                 colour_body=None, colour_buttons=None):
         """Initializes the protocol for the controller.
 
         :param controller_type: The type of controller (Joy-Con (L),
@@ -52,6 +53,12 @@ class ControllerProtocol():
         :type bt_address: string
         :param report_size: The size of the protocol report, defaults to 50
         :type report_size: int, optional
+        :param colour_body: Sets the body colour of the controller, defaults
+        to None
+        :type colour_body: list of bytes, optional
+        :param colour_buttons: Sets the colour of the controller buttons,
+        defaults to None
+        :type colour_buttons: list of bytes, optional
         :raises ValueError: On unknown controller type
         """
 
@@ -107,8 +114,14 @@ class ControllerProtocol():
 
         # Controller colours
         # Body Colour
-        self.colour_body = [0x82] * 3
-        self.colour_buttons = [0x0F] * 3
+        if not colour_body:
+            self.colour_body = [0x82] * 3
+        else:
+            self.colour_body = colour_body
+        if not colour_buttons:
+            self.colour_buttons = [0x0F] * 3
+        else:
+            self.colour_buttons = colour_buttons
 
     def get_report(self):
 
@@ -167,9 +180,11 @@ class ControllerProtocol():
 
         # Bad Packet handling statements
         elif message.response == SwitchResponses.UNKNOWN_SUBCOMMAND:
+            # Currently set so that the controller ignores any unknown
+            # subcommands. This is better than sending a NACK response
+            # since we'd just get stuck in an infinite loop arguing
+            # with the Switch.
             self.set_full_input_report()
-            # self.set_subcommand_reply()
-            # self.set_unknown_subcommand(message.subcommand_id)
 
         elif message.response == SwitchResponses.NO_DATA:
             self.set_full_input_report()
@@ -256,6 +271,14 @@ class ControllerProtocol():
             self.report[12] = self.right_stick_status[2]
 
             self.report[13] = self.vibrator_report
+
+    def set_button_inputs(self, upper, shared, lower):
+
+        self.report[4] = upper
+        self.report[5] = shared
+        self.report[6] = lower
+
+        print(self.report)
 
     def set_device_info(self):
 
@@ -436,13 +459,16 @@ class ControllerProtocol():
             else:
                 replace_subarray(self.report, 30, 9, value=0xFF)
 
+            # Spacer byte
+            self.report[39] = 0xFF
+
             # Body colour
             replace_subarray(
-                self.report, 39, 3,
+                self.report, 40, 3,
                 replace_arr=self.colour_body)
             # Buttons colour
             replace_subarray(
-                self.report, 42, 3,
+                self.report, 43, 3,
                 replace_arr=self.colour_buttons)
 
         # Six-Axis motion sensor factor calibration

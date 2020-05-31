@@ -7,7 +7,9 @@ this project.
 
 - Controller SDP record. They all share the same one (generally), so a only a single record is needed to emulate all three controllers
 - The Bluetooth alias "Joy-Con (L)", "Joy-Con (R)", or "Pro Controller"
-- The Bluetooth Gamepad HID Class
+
+**Note:** Setting the device's major and minor class is *not* required
+to get the Switch to connect. Only the alias and SDP record are required.
 
 ### Weird Tibit:
 

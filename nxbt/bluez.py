@@ -89,19 +89,75 @@ def find_objects(bus, service_name, interface_name):
     return paths
 
 
+def toggle_input_plugin(toggle):
+    """Enables or disables the BlueZ input plugin. Requires
+    root user to be run. The units and Bluetooth service will
+    not be restarted if the input plugin already matches
+    the toggle.
+
+    :param toggle: A boolean element indicating if the plugin
+    is enabled (True) or disabled (False)
+    :type toggle: boolean
+    :raises PermissionError: If the user is not root
+    :raises Exception: If the units can't be reloaded
+    """
+
+    if os.geteuid() != 0:
+        raise PermissionError("The input plugin must be toggled as root")
+
+    service_path = "/lib/systemd/system/bluetooth.service"
+    service = None
+    with open(service_path, "r") as f:
+        service = f.read()
+
+    # Find the bluetooth service execution line
+    lines = service.split("\n")
+    for i in range(0, len(lines)):
+        line = lines[i]
+        if line.startswith("ExecStart="):
+            # If we want to ensure the plugin is enabled
+            if toggle:
+                # If input is already enabled
+                if "--noplugin=input" not in line:
+                    return
+                lines[i] = re.sub(" --noplugin=input", "", line)
+            else:
+                # If input is already disabled
+                if "--noplugin=input" in line:
+                    return
+                # If not, add the flag
+                lines[i] = line + " --noplugin=input"
+
+    service = "\n".join(lines)
+    with open(service_path, "w") as f:
+        f.write(service)
+
+    # Reload units
+    result = subprocess.run(
+        ["systemctl", "daemon-reload"],
+        stderr=subprocess.PIPE)
+
+    cmd_err = result.stderr.decode("utf-8").replace("\n", "")
+    if cmd_err != "":
+        raise Exception(cmd_err)
+
+    # Reload the bluetooth service with input disabled
+    result = subprocess.run(
+            ["systemctl", "restart", "bluetooth"],
+            stderr=subprocess.PIPE)
+
+    cmd_err = result.stderr.decode("utf-8").replace("\n", "")
+    if cmd_err != "":
+        raise Exception(cmd_err)
+
+
 class BlueZ():
     """Exposes the BlueZ D-Bus API as a Python object.
     """
 
-    def __init__(self, device_id="hci0"):
+    def __init__(self, adapter_path="/org/bluez/hci0"):
         self.bus = dbus.SystemBus()
-
-        # Try to find the default adapter (hci0) or a user specified adapter
-        self.device_path = find_object_path(
-            self.bus,
-            SERVICE_NAME,
-            ADAPTER_INTERFACE,
-            object_name=device_id)
+        self.device_path = adapter_path
 
         # If we weren't able to find an adapter with the specified ID,
         # try to find any usable Bluetooth adapter
@@ -123,10 +179,7 @@ class BlueZ():
                 self.device_path),
             "org.freedesktop.DBus.Properties")
 
-        if device_id:
-            self.device_id = device_id
-        else:
-            self.device_id = self.device_path.split("/")[-1]
+        self.device_id = self.device_path.split("/")[-1]
 
         # Load the ProfileManager interface
         self.profile_manager = dbus.Interface(self.bus.get_object(
@@ -399,61 +452,6 @@ class BlueZ():
                 SERVICE_NAME,
                 BLUEZ_OBJECT_PATH),
             PROFILEMANAGER_INTERFACE)
-
-    def toggle_input_plugin(self, toggle):
-        """Enables or disables the BlueZ input plugin. Requires
-        root user to be run. The units and Bluetooth service will
-        not be restarted if the input plugin already matches
-        the toggle.
-
-        :param toggle: A boolean element indicating if the plugin
-        is enabled (True) or disabled (False)
-        :type toggle: boolean
-        :raises PermissionError: If the user is not root
-        :raises Exception: If the units can't be reloaded
-        """
-
-        if os.geteuid() != 0:
-            raise PermissionError("The input plugin must be toggled as root")
-
-        service_path = "/lib/systemd/system/bluetooth.service"
-        service = None
-        with open(service_path, "r") as f:
-            service = f.read()
-
-        # Find the bluetooth service execution line
-        lines = service.split("\n")
-        for i in range(0, len(lines)):
-            line = lines[i]
-            if line.startswith("ExecStart="):
-                # If we want to ensure the plugin is enabled
-                if toggle:
-                    # If input is already enabled
-                    if "--noplugin=input" not in line:
-                        return
-                    lines[i] = re.sub(" --noplugin=input", "", line)
-                else:
-                    # If input is already disabled
-                    if "--noplugin=input" in line:
-                        return
-                    # If not, add the flag
-                    lines[i] = line + " --noplugin=input"
-
-        service = "\n".join(lines)
-        with open(service_path, "w") as f:
-            f.write(service)
-
-        # Reload units
-        result = subprocess.run(
-            ["systemctl", "daemon-reload"],
-            stderr=subprocess.PIPE)
-
-        cmd_err = result.stderr.decode("utf-8").replace("\n", "")
-        if cmd_err != "":
-            raise Exception(cmd_err)
-
-        # Reload the bluetooth service with input disabled
-        self.reset()
 
     def get_discovered_devices(self):
         """Gets a dict of all discovered (or previously discovered

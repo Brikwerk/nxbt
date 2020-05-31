@@ -12,6 +12,7 @@ import time
 import fcntl
 from time import perf_counter
 
+from nxbt import toggle_input_plugin
 from nxbt import BlueZ
 from nxbt import Controller
 from nxbt import ControllerTypes
@@ -92,15 +93,22 @@ def write_to_buffer(buffer, message, message_type):
 
 if __name__ == "__main__":
     # Switch Controller Bluetooth MAC Address goes here
-    jc_MAC = "XX:XX:XX:XX:XX:XX"
+    jc_MAC = "7C:BB:8A:FA:41:3D"
     # Specify the type of controller here
-    controller_type = ControllerTypes.JOYCON_L
+    controller_type = ControllerTypes.PRO_CONTROLLER
+    if controller_type == ControllerTypes.JOYCON_L:
+        REPLY = JCL_REPLY02
+    elif controller_type == ControllerTypes.JOYCON_R:
+        REPLY = JCR_REPLY02
+    else:
+        REPLY = PRO_REPLY02
+
     port_ctrl = 17
     port_itr = 19
     message_buffer = []
 
     bt = BlueZ()
-    bt.toggle_input_plugin(False)
+    toggle_input_plugin(False)
 
     controller = Controller(bt, controller_type)
 
@@ -196,11 +204,11 @@ if __name__ == "__main__":
 
         # Sending Switch the proxy's device info
         if controller_type == ControllerTypes.JOYCON_R:
-            client_interrupt.sendall(JCR_REPLY02)
+            client_interrupt.sendall(REPLY)
         elif controller_type == ControllerTypes.JOYCON_L:
-            client_interrupt.sendall(JCL_REPLY02)
+            client_interrupt.sendall(REPLY)
         elif controller_type == ControllerTypes.PRO_CONTROLLER:
-            client_interrupt.sendall(PRO_REPLY02)
+            client_interrupt.sendall(REPLY)
 
         # Waste some cycles here until we get the controllers info.
         # We don't want to proxy the device's info to the Switch
