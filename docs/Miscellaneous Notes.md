@@ -21,3 +21,22 @@ inquiry input report packet.
 
 Eg: You could get away with emulating a Joy-Con (L) while having the
 Bluetooth alias set to "Pro Controller".
+
+## Pro Controller Grip Colours
+
+At the time of writing, grip colours are being read by the Switch, however,
+they aren't being used to display the controller graphic. Eg: If the left
+and right grip colours are set to white and the controller body is set to
+black, the grip colours will be black. This is likely because Nintendo hasn't
+produced any official Pro Controllers that feature a unique grip and body
+colour.
+
+Currently, grip colours are hardcoded for the official, black Pro Controller.
+The black pro controller reports all white (or blank) grip colours, however,
+the Switch displays a slightly lighter grey when the icon is displayed. Any
+emulated controller can produce this grip colour if the body colour is set
+to #323232, the button colour set to #FFFFFF and the grip colours are set to
+#FFFFFF.
+
+In the future, Nintendo may produce more Pro Controller colours, however,
+at this point in time, setting the grip colour is not possible.

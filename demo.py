@@ -1,4 +1,5 @@
 import time
+from random import randint
 
 from nxbt import Nxbt
 from nxbt import ControllerTypes
@@ -34,26 +35,39 @@ A 0.1s
 """
 
 
+def random_colour():
+
+    return [
+        randint(0, 255),
+        randint(0, 255),
+        randint(0, 255),
+    ]
+
+
 if __name__ == "__main__":
 
+    # Loop over all Bluetooth adapters and create
+    # Switch Pro Controllers
     nxbt = Nxbt()
     adapters = nxbt.get_available_adapters()
-    index = nxbt.create_controller(
-        ControllerTypes.PRO_CONTROLLER,
-        adapters[0],
-        colour_body=[0xFF, 0x7B, 0x83],
-        colour_buttons=[0xFF, 0xF0, 0x78])
-    index2 = nxbt.create_controller(
-        ControllerTypes.PRO_CONTROLLER,
-        adapters[1],
-        colour_body=[0xFF, 0xFF, 0xFF],
-        colour_buttons=[0xFF, 0xF0, 0x78])
-    nxbt.macro(index2, MACRO, block=False)
+    # adapters = ["/org/bluez/hci0"]
+    controller_idxs = []
+    for i in range(0, len(adapters)):
+        index = nxbt.create_controller(
+            ControllerTypes.PRO_CONTROLLER,
+            adapters[i],
+            colour_body=random_colour(),
+            colour_buttons=random_colour())
+        controller_idxs.append(index)
+    # Run a macro on the last controller
+    nxbt.macro(controller_idxs[-1], MACRO, block=False)
+
+    # Check the state
     while True:
         time.sleep(1)
-        state = nxbt.state[0]
-        if not state["errors"]:
-            print(state["finished_macros"])
-        else:
-            print(state["errors"])
-            break
+        for key in nxbt.state.keys():
+            state = nxbt.state[key]
+            if not state["errors"]:
+                print(state)
+            else:
+                print(state["errors"])

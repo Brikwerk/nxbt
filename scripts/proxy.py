@@ -107,8 +107,8 @@ if __name__ == "__main__":
     port_itr = 19
     message_buffer = []
 
-    bt = BlueZ()
     toggle_input_plugin(False)
+    bt = BlueZ(adapter_path="/org/bluez/hci0")
 
     controller = Controller(bt, controller_type)
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
             # Ensure we are paired/connected to the JC
             print("Attempting to re-pair with device")
-            devices = bt.discover_devices(alias="Joy-Con (L)", timeout=8)
+            devices = bt.discover_devices(alias="Pro Controller", timeout=8)
             jc_device_path = None
             for key in devices.keys():
                 print(devices[key]["Address"])
@@ -291,3 +291,6 @@ if __name__ == "__main__":
         switch_ctrl.close()
 
         raise e
+
+    finally:
+        toggle_input_plugin(True)

@@ -65,5 +65,3 @@ class Controller():
             self.bt.register_profile(self.SDP_RECORD_PATH, self.SDP_UUID, opts)
         except dbus.exceptions.DBusException:
             pass
-
-        # self.bt.set_device_class(self.GAMEPAD_CLASS)

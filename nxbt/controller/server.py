@@ -15,7 +15,19 @@ from .utils import format_msg_controller, format_msg_switch
 class ControllerServer():
 
     def __init__(self, controller_type, adapter_path="/org/bluez/hci0",
-                 lock=None, colour_body=None, colour_buttons=None):
+                 state=None, task_queue=None, lock=None, colour_body=None,
+                 colour_buttons=None):
+
+        if state:
+            self.state = state
+        else:
+            self.state = {
+                "state": "",
+                "finished_macros": [],
+                "errors": None
+            }
+
+        self.task_queue = task_queue
 
         self.controller_type = controller_type
         self.colour_body = colour_body
@@ -38,7 +50,7 @@ class ControllerServer():
 
         self.input = InputParser(self.protocol)
 
-    def run(self, reconnect_address=None, state=None, task_queue=None):
+    def run(self, reconnect_address=None):
         """Runs the mainloop of the controller server.
 
         :param reconnect_address: The Bluetooth MAC address of a
@@ -46,115 +58,137 @@ class ControllerServer():
         :type reconnect_address: string, optional
         """
 
-        if state:
-            state["state"] = "initializing"
+        self.state["state"] = "initializing"
 
         try:
             # If we have a lock, prevent other controllers
-            # from initializing at the same time and saturating
-            # the DBus
+            # from initializing at the same time and saturating the DBus,
+            # potentially causing a kernel panic.
             if self.lock:
                 self.lock.acquire()
             try:
                 self.controller.setup()
 
                 if reconnect_address:
-                    itr, ctrl = self.reconnect(reconnect_address, state=state)
+                    itr, ctrl = self.reconnect(reconnect_address)
                 else:
-                    itr, ctrl = self.connect(state=state)
-            except Exception:
+                    itr, ctrl = self.connect()
+            finally:
                 if self.lock:
                     self.lock.release()
 
             self.switch_address = itr.getsockname()[0]
 
-            if state:
-                state["state"] = "connected"
+            self.state["state"] = "connected"
 
-            # Mainloop
-            while True:
-                # Attempt to get output from Switch
+            self.mainloop(itr, ctrl)
+
+        except Exception:
+            self.state["state"] = "crashed"
+            self.state["errors"] = traceback.format_exc()
+            return self.state
+
+    def mainloop(self, itr, ctrl):
+
+        # Mainloop
+        while True:
+            # Attempt to get output from Switch
+            try:
+                reply = itr.recv(50)
+                if len(reply) > 40:
+                    print(format_msg_switch(reply))
+            except BlockingIOError:
+                reply = None
+
+            # Getting any inputs from the task queue
+            if self.task_queue:
                 try:
-                    reply = itr.recv(50)
-                    if len(reply) > 40:
-                        print(format_msg_switch(reply))
-                except BlockingIOError:
-                    reply = None
+                    msg = self.task_queue.get_nowait()
+                    print(msg)
+                    if msg:
+                        self.input.buffer_macro(
+                            msg["macro"], msg["macro_id"])
+                except queue.Empty:
+                    pass
 
-                # Getting any inputs from the task queue
-                if task_queue:
-                    try:
-                        msg = task_queue.get_nowait()
-                        print(msg)
-                        if msg:
-                            self.input.buffer_macro(
-                                msg["macro"], msg["macro_id"])
-                    except queue.Empty:
-                        pass
+            self.protocol.process_commands(reply)
+            self.input.set_protocol_input(state=self.state)
+            msg = self.protocol.get_report()
 
-                self.protocol.process_commands(reply)
-                self.input.set_protocol_input(state=state)
-                msg = self.protocol.get_report()
+            if reply:
+                print(format_msg_controller(msg))
 
-                if reply:
-                    print(format_msg_controller(msg))
+            try:
+                itr.sendall(msg)
+            except BlockingIOError:
+                continue
+            except OSError as e:
+                # Attempt to reconnect to the Switch
+                itr, ctrl = self.save_connection(e)
 
-                try:
-                    itr.sendall(msg)
-                except BlockingIOError:
-                    continue
-                except OSError as e:
-                    # Attempt to reconnect to the Switch
-                    if self.reconnect_counter < 2:
-                        try:
-                            print("Attempting to reconnect")
-                            # Reinitialize the protocol
-                            self.protocol = ControllerProtocol(
-                                self.controller_type,
-                                self.bt.address,
-                                colour_body=self.colour_body,
-                                colour_buttons=self.colour_buttons)
-                            itr, ctrl = self.reconnect(self.switch_address,
-                                                       state=state)
-                        except OSError:
-                            self.reconnect_counter += 1
-                            print(e)
-                            time.sleep(0.5)
-                            continue
-                    # If we can't reconnect, transition to attempting
-                    # to connect to any Switch.
-                    else:
-                        print("Connecting")
-                        # Reinitialize the protocol
-                        self.protocol = ControllerProtocol(
-                            self.controller_type,
-                            self.bt.address,
-                            colour_body=self.colour_body,
-                            colour_buttons=self.colour_buttons)
-                        itr, ctrl = self.connect(state=state)
-                        self.switch_address = itr.getsockname()[0]
-
-                # Respond at 120Hz for Pro Controller
-                # or 60Hz for Joy-Cons
-                if self.controller_type == ControllerTypes.PRO_CONTROLLER:
-                    time.sleep(1/120)
-                else:
-                    time.sleep(1/60)
-
-        except Exception as e:
-            if state:
-                state["state"] = "crashed"
-                state["errors"] = traceback.format_exc()
+            # Respond at 120Hz for Pro Controller
+            # or 60Hz for Joy-Cons
+            if self.controller_type == ControllerTypes.PRO_CONTROLLER:
+                time.sleep(1/120)
             else:
-                raise e
+                time.sleep(1/60)
 
-    def connect(self, state=None):
+    def save_connection(self, error, state=None):
+
+        while self.reconnect_counter < 2:
+            try:
+                print("Attempting to reconnect")
+                # Reinitialize the protocol
+                self.protocol = ControllerProtocol(
+                    self.controller_type,
+                    self.bt.address,
+                    colour_body=self.colour_body,
+                    colour_buttons=self.colour_buttons)
+                if self.lock:
+                    self.lock.acquire()
+                try:
+                    itr, ctrl = self.reconnect(self.switch_address)
+                    return itr, ctrl
+                finally:
+                    if self.lock:
+                        self.lock.release()
+            except OSError:
+                self.reconnect_counter += 1
+                print(error)
+                time.sleep(0.5)
+
+        # If we can't reconnect, transition to attempting
+        # to connect to any Switch.
+        print("Connecting")
+        self.reconnect_counter = 0
+
+        # Reinitialize the protocol
+        self.protocol = ControllerProtocol(
+            self.controller_type,
+            self.bt.address,
+            colour_body=self.colour_body,
+            colour_buttons=self.colour_buttons)
+
+        if self.lock:
+            self.lock.acquire()
+        try:
+            itr, ctrl = self.connect()
+        finally:
+            if self.lock:
+                self.lock.release()
+
+        self.state["state"] = "connected"
+
+        self.switch_address = itr.getsockname()[0]
+
+        return itr, ctrl
+
+    def connect(self):
         """Configures as a specified controller, pairs with a Nintendo Switch,
         and creates/accepts sockets for communication with the Switch.
         """
 
-        if state:
-            state["state"] = "connecting"
+        self.state["state"] = "connecting"
 
         # Creating control and interrupt sockets
         s_ctrl = socket.socket(
@@ -223,15 +257,14 @@ class ControllerServer():
 
         return itr, ctrl
 
-    def reconnect(self, reconnect_address, state=None):
+    def reconnect(self, reconnect_address):
         """Attempts to reconnect with a Switch at the given address.
 
         :param reconnect_address: The Bluetooth MAC address of the Switch
         :type reconnect_address: string
         """
 
-        if state:
-            state["state"] = "reconnecting"
+        self.state["state"] = "reconnecting"
 
         # Creating control and interrupt sockets
         ctrl = socket.socket(

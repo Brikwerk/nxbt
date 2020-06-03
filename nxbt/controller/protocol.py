@@ -99,13 +99,17 @@ class ControllerProtocol():
         if self.controller_type == ControllerTypes.JOYCON_R:
             self.left_stick_status = [0x00] * 3
         else:
-            self.left_stick_status = [0x74, 0x58, 0x75]
+            # Center values which are also reported under
+            # SPI Stick calibration reads
+            self.left_stick_status = [0x6F, 0xC8, 0x77]
 
         # Disable right stick if we have a left Joy-Con
         if self.controller_type == ControllerTypes.JOYCON_L:
             self.right_stick_status = [0x00] * 3
         else:
-            self.right_stick_status = [0x4B, 0x68, 0x7C]
+            # Center values which are also reported under
+            # SPI Stick calibration reads
+            self.right_stick_status = [0x16, 0xD8, 0x7D]
 
         self.vibrator_report = random.choice(self.VIBRATOR_BYTES)
 
@@ -277,8 +281,6 @@ class ControllerProtocol():
         self.report[4] = upper
         self.report[5] = shared
         self.report[6] = lower
-
-        print(self.report)
 
     def set_device_info(self):
 

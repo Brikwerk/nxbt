@@ -119,7 +119,7 @@ class Nxbt():
 
         return macro_id
 
-    def create_controller(self, controller_type, adapter_path, block=True,
+    def create_controller(self, controller_type, adapter_path,
                           colour_body=None, colour_buttons=None):
 
         if adapter_path not in self.get_available_adapters():
@@ -145,6 +145,9 @@ class Nxbt():
             self.__controller_counter += 1
             self.__adapters_in_use.append(adapter_path)
 
+            # Block until the controller is ready
+            # This needs to be done to prevent race conditions
+            # on DBus resources.
             if type(controller_index) == int:
                 while True:
                     if controller_index in self.manager_state.keys():
@@ -197,10 +200,11 @@ class ControllerManager():
         server = ControllerServer(controller_type,
                                   adapter_path=adapter_path,
                                   lock=self.lock,
+                                  state=controller_state,
+                                  task_queue=controller_queue,
                                   colour_body=colour_body,
                                   colour_buttons=colour_buttons)
-        controller = Process(target=server.run, args=(
-            None, controller_state, controller_queue))
+        controller = Process(target=server.run)
         controller.daemon = True
         controller.start()
 

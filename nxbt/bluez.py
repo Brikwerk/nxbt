@@ -150,6 +150,9 @@ def toggle_input_plugin(toggle):
     if cmd_err != "":
         raise Exception(cmd_err)
 
+    # Kill a bit of time here to ensure all services have restarted
+    time.sleep(0.5)
+
 
 class BlueZ():
     """Exposes the BlueZ D-Bus API as a Python object.

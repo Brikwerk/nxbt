@@ -82,7 +82,6 @@ class InputParser():
 
         # Checking if this is a wait macro command
         if len(macro_input) < 2:
-            print("waiting")
             return
 
         # Arrays representing the 3 button bytes in the
