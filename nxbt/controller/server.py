@@ -104,7 +104,6 @@ class ControllerServer():
             if self.task_queue:
                 try:
                     msg = self.task_queue.get_nowait()
-                    print(msg)
                     if msg:
                         self.input.buffer_macro(
                             msg["macro"], msg["macro_id"])
@@ -115,8 +114,8 @@ class ControllerServer():
             self.input.set_protocol_input(state=self.state)
             msg = self.protocol.get_report()
 
-            if reply:
-                print(format_msg_controller(msg))
+            # if reply:
+            #     print(format_msg_controller(msg))
 
             try:
                 itr.sendall(msg)
@@ -168,6 +167,7 @@ class ControllerServer():
             self.bt.address,
             colour_body=self.colour_body,
             colour_buttons=self.colour_buttons)
+        self.input.reassign_protocol(self.protocol)
 
         if self.lock:
             self.lock.acquire()

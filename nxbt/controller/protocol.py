@@ -3,7 +3,7 @@ import random
 from time import perf_counter
 
 from .controller import ControllerTypes
-from .utils import replace_subarray
+from .utils import replace_subarray, format_msg_controller
 
 
 class SwitchResponses(Enum):
@@ -97,19 +97,19 @@ class ControllerProtocol():
 
         # Disable left stick if we have a right Joy-Con
         if self.controller_type == ControllerTypes.JOYCON_R:
-            self.left_stick_status = [0x00] * 3
+            self.left_stick_centre = [0x00] * 3
         else:
             # Center values which are also reported under
             # SPI Stick calibration reads
-            self.left_stick_status = [0x6F, 0xC8, 0x77]
+            self.left_stick_centre = [0x6F, 0xC8, 0x77]
 
         # Disable right stick if we have a left Joy-Con
         if self.controller_type == ControllerTypes.JOYCON_L:
-            self.right_stick_status = [0x00] * 3
+            self.right_stick_centre = [0x00] * 3
         else:
             # Center values which are also reported under
             # SPI Stick calibration reads
-            self.right_stick_status = [0x16, 0xD8, 0x7D]
+            self.right_stick_centre = [0x16, 0xD8, 0x7D]
 
         self.vibrator_report = random.choice(self.VIBRATOR_BYTES)
 
@@ -130,6 +130,7 @@ class ControllerProtocol():
     def get_report(self):
 
         report = bytes(self.report)
+        print(format_msg_controller(report))
         # Clear report
         self.set_empty_report()
         return report
@@ -266,21 +267,34 @@ class ControllerProtocol():
             self.report[5] = self.button_status[1]
             self.report[6] = self.button_status[2]
 
-            self.report[7] = self.left_stick_status[0]
-            self.report[8] = self.left_stick_status[1]
-            self.report[9] = self.left_stick_status[2]
+            self.report[7] = self.left_stick_centre[0]
+            self.report[8] = self.left_stick_centre[1]
+            self.report[9] = self.left_stick_centre[2]
 
-            self.report[10] = self.right_stick_status[0]
-            self.report[11] = self.right_stick_status[1]
-            self.report[12] = self.right_stick_status[2]
+            self.report[10] = self.right_stick_centre[0]
+            self.report[11] = self.right_stick_centre[1]
+            self.report[12] = self.right_stick_centre[2]
 
             self.report[13] = self.vibrator_report
 
     def set_button_inputs(self, upper, shared, lower):
 
+        print(upper, shared, lower)
         self.report[4] = upper
         self.report[5] = shared
         self.report[6] = lower
+
+    def set_left_stick_inputs(self, left):
+
+        self.report[7] = left[0]
+        self.report[8] = left[1]
+        self.report[9] = left[2]
+
+    def set_right_stick_inputs(self, right):
+
+        self.report[10] = right[0]
+        self.report[11] = right[1]
+        self.report[12] = right[2]
 
     def set_device_info(self):
 

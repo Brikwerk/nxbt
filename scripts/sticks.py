@@ -24,10 +24,10 @@ data_right[5] = (stick_cal_right[8] << 4) | (stick_cal_right[7] >> 4)
 # Left Stick Decode
 left_center_x = data_left[2]
 left_center_y = data_left[3]
-left_x_min = left_center_x - data_left[0]
-left_x_max = left_center_x + data_left[4]
-left_y_min = left_center_y - data_left[1]
-left_y_max = left_center_y + data_left[5]
+left_x_min = (left_center_x - data_left[0]) - left_center_x
+left_x_max = (left_center_x + data_left[4]) - left_center_x
+left_y_min = (left_center_y - data_left[1]) - left_center_y
+left_y_max = (left_center_y + data_left[5]) - left_center_y
 
 print("Left Stick Values:")
 print("~~~~~~~~~~~~~~~~~~")
@@ -38,10 +38,10 @@ print("Left Y Min/Max:     ", left_y_min, "", left_y_max)
 # Right Stick Decode
 right_center_x = data_right[0]
 right_center_y = data_right[1]
-right_x_min = right_center_x - data_right[2]
-right_x_max = right_center_x + data_right[4]
-right_y_min = right_center_y - data_right[3]
-right_y_max = right_center_y + data_right[5]
+right_x_min = (right_center_x - data_right[2]) - right_center_x
+right_x_max = (right_center_x + data_right[4]) - right_center_x
+right_y_min = (right_center_y - data_right[3]) - right_center_y
+right_y_max = (right_center_y + data_right[5]) - right_center_y
 
 print("\nRight Stick Values:")
 print("~~~~~~~~~~~~~~~~~~~")
@@ -63,9 +63,20 @@ print("Relative X/Y Values", ratio_x, ratio_y)
 
 print("\nExample Left Stick Ratio to Data Conversion:")
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-data_x_converted = (abs(ratio_x) * (left_x_min - left_center_x) + left_center_x)
+if ratio_x < 0:
+    data_x_converted = (
+        abs(ratio_x) * (left_x_min - left_center_x) + left_center_x)
+else:
+    data_x_converted = (
+        abs(ratio_x) * (left_x_max - left_center_x) + left_center_x)
 data_x_converted = int(round(data_x_converted))
-data_y_converted = (abs(ratio_y) * (left_y_min - left_center_y) + left_center_y)
+
+if ratio_y < 0:
+    data_y_converted = (
+        abs(ratio_y) * (left_y_min - left_center_y) + left_center_y)
+else:
+    data_y_converted = (
+        abs(ratio_y) * (left_y_max - left_center_y) + left_center_y)
 data_y_converted = int(round(data_y_converted))
 print("X/Y Converted Values:", data_x_converted, data_y_converted)
 

@@ -8,8 +8,14 @@ import os
 import dbus
 
 from .controller import ControllerServer
+from .controller import ControllerTypes
 from .bluez import find_objects, toggle_input_plugin
 from .bluez import SERVICE_NAME, ADAPTER_INTERFACE
+
+
+JOYCON_L = ControllerTypes.JOYCON_L
+JOYCON_R = ControllerTypes.JOYCON_R
+PRO_CONTROLLER = ControllerTypes.PRO_CONTROLLER
 
 
 class NxbtCommands(Enum):
@@ -147,7 +153,7 @@ class Nxbt():
 
             # Block until the controller is ready
             # This needs to be done to prevent race conditions
-            # on DBus resources.
+            # on Bluetooth resources.
             if type(controller_index) == int:
                 while True:
                     if controller_index in self.manager_state.keys():
@@ -157,7 +163,6 @@ class Nxbt():
                             break
         finally:
             self.__controller_lock.release()
-            pass
 
         return controller_index
 
