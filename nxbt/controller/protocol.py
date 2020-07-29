@@ -111,6 +111,7 @@ class ControllerProtocol():
             # SPI Stick calibration reads
             self.right_stick_centre = [0x16, 0xD8, 0x7D]
 
+        self.vibration_enabled = False
         self.vibrator_report = random.choice(self.VIBRATOR_BYTES)
 
         # IMU (Six Axis Sensor) State
@@ -130,7 +131,6 @@ class ControllerProtocol():
     def get_report(self):
 
         report = bytes(self.report)
-        print(format_msg_controller(report))
         # Clear report
         self.set_empty_report()
         return report
@@ -279,7 +279,6 @@ class ControllerProtocol():
 
     def set_button_inputs(self, upper, shared, lower):
 
-        print(upper, shared, lower)
         self.report[4] = upper
         self.report[5] = shared
         self.report[6] = lower
@@ -527,10 +526,13 @@ class ControllerProtocol():
     def enable_vibration(self):
 
         # ACK Reply
-        self.report[14] = 0x80
+        self.report[14] = 0x82
 
         # Subcommand reply
         self.report[15] = 0x48
+
+        # Set class property
+        self.vibration_enabled = True
 
     def set_player_lights(self, message):
 
@@ -542,13 +544,13 @@ class ControllerProtocol():
 
         bitfield = message.subcommand[1]
 
-        if bitfield == 0x01 or bitfield == 0x1F:
+        if bitfield == 0x01 or bitfield == 0x10:
             self.player_number = 1
-        elif bitfield == 0x03 or bitfield == 0x3F:
+        elif bitfield == 0x03 or bitfield == 0x30:
             self.player_number = 2
-        elif bitfield == 0x07 or bitfield == 0x7F:
+        elif bitfield == 0x07 or bitfield == 0x70:
             self.player_number = 3
-        elif bitfield == 0x0F or bitfield == 0xFF:
+        elif bitfield == 0x0F or bitfield == 0xF0:
             self.player_number = 4
 
     def set_nfc_ir_state(self):
