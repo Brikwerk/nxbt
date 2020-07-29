@@ -1052,10 +1052,10 @@ The total bitfield width is 8 bits, to encompass the hex byte.
 | 0x03 | 0000 0011 | Keep player lights on, player 2 |
 | 0x07 | 0000 0111 | Keep player lights on, player 3 |
 | 0x0F | 0000 1111 | Keep player lights on, player 4 |
-| 0x1F | 0001 1111 | Flash player lights, player 1 |
-| 0x3F | 0011 1111 | Flash player lights, player 2 |
-| 0x7F | 0111 1111 | Flash player lights, player 3 |
-| 0xFF | 1111 1111 | Flash player lights, player 4 |
+| 0x10 | 0001 0000 | Flash player lights, player 1 |
+| 0x30 | 0011 0000 | Flash player lights, player 2 |
+| 0x70 | 0111 0000 | Flash player lights, player 3 |
+| 0xF0 | 1111 0000 | Flash player lights, player 4 |
 
 ```
 ||| --- Switch Msg --- # Set Player Lights
