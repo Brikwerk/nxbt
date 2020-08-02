@@ -40,3 +40,40 @@ to #323232, the button colour set to #FFFFFF and the grip colours are set to
 
 In the future, Nintendo may produce more Pro Controller colours, however,
 at this point in time, setting the grip colour is not possible.
+
+## Reconnecting after the "Change Grip/Order" menu is opened
+
+Opening the "Change Grip/Order" menu (either through the Controllers menu or
+within a game) causes the Switch to cancel all Bluetooth connections to
+controllers and force a reconnection.
+
+The process is still a bit of a mystery (for me, at least) how exactly 
+a controller reconnects after the Grip/Order menu is opened. There are a
+couple of little quirks and gotchas to be aware of that I've run into:
+
+1. Controllers must run through a complete reconnection after the Grip/Order
+    menu is opened. A controller cannot revive or reconnect on its previous
+    connection. The Switch must reach out to the controller and the reconnection
+    process must be run through again. The Grip/Order menu, however, does not
+    cancel previous Bluetooth pairings. This rule only applies while the Grip/Order
+    menu is open. Once the menu is closed, controllers can attempt to revive a
+    connection, however, they still might have to run through the reconnection 
+    process.
+
+2. After reconnection on the Grip/Order menu, **emulated** controllers 
+    **must** press the L + R buttons before attempting regular input. This is a bit of a strange condition that I'm still grappling with. In some situations,
+    a non-emulated controller can get away with not pressing the L + R buttons
+    and jump straight into regular input. I'm not 100% sure how they're able to, 
+    however, I think it's an okay enough compromise to hardcode an L + R press
+    after a reconnection.
+
+## Waking the Switch Over Bluetooth
+
+From a preliminary investigation, it seems that the Pro/Joy Controllers use
+Broadcom Fast Connect (or something similar) to wake the Switch over Bluetooth.
+Since this falls under a hardware-specific function, it's not possible to
+emulate this unless a given piece of hardware matches this feature.
+
+In the future, a potential strategy to wake the Switch might be to connect
+a given device running NXBT over the dock's USB port and implement
+Wake-On-USB instead.
