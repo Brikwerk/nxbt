@@ -3,7 +3,7 @@ Quick script to emulate a Switch connecting to a Joy-Con/Pro Controller.
 
 Note: If you get an Invalid Exchange error when running this script, this means
 that the Switch has paired to the controller, invalidating the original pairing
-key we created. You'll need to remove the controller before continuing.
+key we created. You'll need to re-pair the controller to this device.
 """
 
 import socket
@@ -115,7 +115,7 @@ def wait_for_reply(itr):
 if __name__ == "__main__":
 
     # Switch Controller Bluetooth MAC Address goes here
-    jc_MAC = "7C:BB:8A:FA:41:3D"
+    jc_MAC = "98:B6:E9:B0:05:E7"
     port_ctrl = 17
     port_itr = 19
 
@@ -166,15 +166,6 @@ if __name__ == "__main__":
             print_msg_switch(command)
             jc_itr.sendall(command)
             wait_for_reply(jc_itr)
-
-        print("Here")
-        jc_itr.sendall(FLASH_PLAYER_LIGHTS)
-        count = 0
-        while count < 360:
-            data = jc_itr.recv(350)
-            print_msg_controller(data)
-            time.sleep(1/120)
-            count += 1
 
         while True:
             data = jc_itr.recv(350)

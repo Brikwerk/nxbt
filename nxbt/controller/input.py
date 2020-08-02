@@ -55,6 +55,43 @@ class InputParser():
 
         self.macro_buffer.append([macro, macro_id])
 
+    def stop_macro(self, macro_id, state=None):
+
+        # Check if the macro is being input currently
+        if macro_id == self.current_macro_id:
+            # If so, reset the current macro
+            self.current_macro = None
+            self.current_macro_id = None
+            self.current_macro_commands = None
+            self.macro_timer_length = 0
+            self.macro_timer_start = 0
+        else:
+            # Check if the macro is still in the buffer
+            for i in range(0, len(self.macro_buffer)):
+                if macro_id == self.macro_buffer[i][1]:
+                    del self.macro_buffer[i]
+
+        # Ensure the stopped macro is added to the finished
+        # macros so that any blocking parties listening can
+        # continue.
+        if state:
+            finished = state["finished_macros"]
+            finished.append(macro_id)
+            state["finished_macros"] = finished
+
+        return
+
+    def clear_macros(self, state=None):
+
+        self.current_macro = None
+        self.current_macro_id = None
+        self.current_macro_commands = None
+        self.macro_timer_length = 0
+        self.macro_timer_start = 0
+        self.macro_buffer = []
+
+        return
+
     def set_controller_input(self, controller_input):
 
         self.controller_input = controller_input
@@ -85,8 +122,7 @@ class InputParser():
                 self.macro_timer_length = float(timer_length)
                 self.macro_timer_start = perf_counter()
 
-            print(self.current_macro_commands)
-            self.parse_macro_input(self.current_macro_commands)
+            self.set_macro_input(self.current_macro_commands)
 
             # Check if we're done inputting the current command
             time_delta = perf_counter() - self.macro_timer_start
@@ -153,7 +189,7 @@ class InputParser():
 
         return parsed
 
-    def parse_macro_input(self, macro_input):
+    def set_macro_input(self, macro_input):
 
         # Checking if this is a wait macro command
         if len(macro_input) < 2:
@@ -178,9 +214,9 @@ class InputParser():
                 upper[5] = '1'
             elif button == "A":
                 upper[4] = '1'
-            elif button == "SR":
+            elif button == "JCL_SR":
                 upper[3] = '1'
-            elif button == "SL":
+            elif button == "JCL_SL":
                 upper[2] = '1'
             elif button == "R":
                 upper[1] = '1'
@@ -210,9 +246,9 @@ class InputParser():
                 lower[5] = '1'
             elif button == "DPAD_LEFT":
                 lower[4] = '1'
-            elif button == "SR":
+            elif button == "JCR_SR":
                 lower[3] = '1'
-            elif button == "SL":
+            elif button == "JCR_SL":
                 lower[2] = '1'
             elif button == "L":
                 lower[1] = '1'

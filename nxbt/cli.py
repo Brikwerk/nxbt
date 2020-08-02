@@ -13,65 +13,52 @@ args = parser.parse_args()
 
 
 MACRO = """
-LOOP 100
-    B 0.1s
-    0.1s
-    B 0.1s
-    0.1s
-    B 0.1s
-    0.1s
-    B 0.1s
-    1.5s
-    DPAD_RIGHT 0.075s
-    0.075s
-    A 0.1s
-    1.5s
-    DPAD_DOWN 1.0s
-    A 0.1s
-    0.25s
-    DPAD_DOWN 0.8s
-    A 0.1s
-    0.25s
-    L_STICK_PRESS 0.1s
-    1.0s
-    L_STICK@-100+000 0.75s
-    L_STICK@+000+100 0.75s
-    L_STICK@+100+000 0.75s
-    L_STICK@+000-100 0.75s
-    B 0.1s
-    0.25s
-    R_STICK_PRESS 0.1s
-    1.0s
-    R_STICK@-100+000 0.75s
-    R_STICK@+000+100 0.75s
-    R_STICK@+100+000 0.75s
-    R_STICK@+000-100 0.75s
-    B 0.1s
-    0.1s
-    B 0.1s
-    0.1s
-    B 0.1s
-    0.1s
-    B 0.1s
-    0.4s
-    DPAD_LEFT 0.1s
-    0.1s
-    A 0.1s
-    1.5s
-    A 0.1s
-    20.0s
-"""
-
-MACRO = """
 B 0.1s
-3.0s
+0.1s
+B 0.1s
+0.1s
+B 0.1s
+0.1s
+B 0.1s
+1.5s
+DPAD_RIGHT 0.075s
+0.075s
 A 0.1s
-3.0s
-20.0s
+1.5s
+DPAD_DOWN 1.0s
+A 0.1s
+0.25s
+DPAD_DOWN 0.95s
+A 0.1s
+0.25s
+L_STICK_PRESS 0.1s
+1.0s
+L_STICK@-100+000 0.75s
+L_STICK@+000+100 0.75s
+L_STICK@+100+000 0.75s
+L_STICK@+000-100 0.75s
 B 0.1s
-LOOP 100
-    B 0.1s
-    0.1s
+0.25s
+R_STICK_PRESS 0.1s
+1.0s
+R_STICK@-100+000 0.75s
+R_STICK@+000+100 0.75s
+R_STICK@+100+000 0.75s
+R_STICK@+000-100 0.75s
+B 0.1s
+0.1s
+B 0.1s
+0.1s
+B 0.1s
+0.1s
+B 0.1s
+0.4s
+DPAD_LEFT 0.1s
+0.1s
+A 0.1s
+1.5s
+A 0.1s
+5.0s
 """
 
 
@@ -103,17 +90,7 @@ def demo():
 
     # Run a macro on the last controller
     # and don't wait for the macro to complete
-    nx.macro(controller_idxs[-1], MACRO, block=False)
-
-    # Check the state
-    while True:
-        time.sleep(1)
-        for key in nx.state.keys():
-            state = nx.state[key]
-            if not state["errors"]:
-                print(state)
-            else:
-                print(state["errors"])
+    nx.macro(controller_idxs[-1], MACRO)
 
 
 def main():

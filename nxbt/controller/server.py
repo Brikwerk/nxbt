@@ -70,6 +70,7 @@ class ControllerServer():
                 self.controller.setup()
 
                 if reconnect_address:
+                    print("reconnecting")
                     itr, ctrl = self.reconnect(reconnect_address)
                 else:
                     itr, ctrl = self.connect()
@@ -92,6 +93,9 @@ class ControllerServer():
 
         # Mainloop
         while True:
+            # Start timing the command processing
+            timer_start = time.perf_counter()
+
             # Attempt to get output from Switch
             try:
                 reply = itr.recv(50)
@@ -104,9 +108,15 @@ class ControllerServer():
             if self.task_queue:
                 try:
                     msg = self.task_queue.get_nowait()
-                    if msg:
+                    if msg and msg["type"] == "macro":
                         self.input.buffer_macro(
                             msg["macro"], msg["macro_id"])
+                    elif msg and msg["type"] == "stop":
+                        self.input.stop_macro(
+                            msg["macro_id"], state=self.state)
+                    elif msg and msg["type"] == "clear":
+                        self.input.clear_macros(
+                            state=self.state)
                 except queue.Empty:
                     pass
 
@@ -114,8 +124,8 @@ class ControllerServer():
             self.input.set_protocol_input(state=self.state)
             msg = self.protocol.get_report()
 
-            # if reply:
-            #     print(format_msg_controller(msg))
+            if reply and len(reply) > 45:
+                print(format_msg_controller(msg))
 
             try:
                 itr.sendall(msg)
@@ -125,12 +135,20 @@ class ControllerServer():
                 # Attempt to reconnect to the Switch
                 itr, ctrl = self.save_connection(e)
 
+            # Figure out how long it took to process commands
+            timer_end = time.perf_counter()
+            elapsed_time = (timer_end - timer_start)
+
             # Respond at 120Hz for Pro Controller
-            # or 60Hz for Joy-Cons
+            # or 60Hz for Joy-Cons.
+            # Sleep timers are compensated with the elapsed command
+            # processing time.
             if self.controller_type == ControllerTypes.PRO_CONTROLLER:
-                time.sleep(1/120)
+                if elapsed_time < 1/120:
+                    time.sleep(1/120 - elapsed_time)
             else:
-                time.sleep(1/60)
+                if elapsed_time < 1/60:
+                    time.sleep(1/60 - elapsed_time)
 
     def save_connection(self, error, state=None):
 
@@ -168,6 +186,11 @@ class ControllerServer():
             colour_body=self.colour_body,
             colour_buttons=self.colour_buttons)
         self.input.reassign_protocol(self.protocol)
+
+        # Since we were forced to attempt a reconnection
+        # we need to press the L and R buttons before
+        # we can proceed with any input.
+        self.input.current_macro_commands = "L R 0.0s".strip(" ").split(" ")
 
         if self.lock:
             self.lock.acquire()
@@ -221,9 +244,9 @@ class ControllerServer():
         msg = self.protocol.get_report()
         itr.sendall(msg)
 
-        # Setting interrupt connection as non-blocking
+        # Setting interrupt connection as non-blocking.
         # In this case, non-blocking means it throws a "BlockingIOError"
-        # for sending and receiving, instead of blocking
+        # for sending and receiving, instead of blocking.
         fcntl.fcntl(itr, fcntl.F_SETFL, os.O_NONBLOCK)
 
         # Mainloop
@@ -247,8 +270,10 @@ class ControllerServer():
             except BlockingIOError:
                 continue
 
-            # Exit pairing loop on set player lights
-            if reply and len(reply) > 45 and reply[11] == 0x30:
+            # Exit pairing loop when player lights have been set and
+            # vibration has been enabled
+            if (reply and len(reply) > 45 and
+                    self.protocol.vibration_enabled and self.protocol.player_number):
                 break
 
             # Switch responds to packets slower during pairing

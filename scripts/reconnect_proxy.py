@@ -98,6 +98,7 @@ def write_to_buffer(buffer, message, message_type):
 if __name__ == "__main__":
     # Switch Controller Bluetooth MAC Address goes here
     jc_MAC = "98:B6:E9:B0:05:E7"
+    switch_MAC = "7C:BB:8A:D9:91:5A"
     # Specify the type of controller here
     controller_type = PRO_CONTROLLER
     if controller_type == JOYCON_L:
@@ -133,33 +134,6 @@ if __name__ == "__main__":
                                 proto=socket.BTPROTO_L2CAP)
 
     try:
-        # Remove the device before we try to re-pair
-        device_path = bt.find_device_by_address(jc_MAC)
-        if not device_path:
-            print("Device not paired. Pairing...")
-
-            # Ensure we are paired/connected to the JC
-            print("Attempting to re-pair with device")
-            devices = bt.discover_devices(alias="Pro Controller", timeout=8)
-            jc_device_path = None
-            for key in devices.keys():
-                print(devices[key]["Address"])
-                if devices[key]["Address"] == jc_MAC:
-                    jc_device_path = key
-                    break
-
-            if not jc_device_path:
-                print("The specified Joy-Con could not be found")
-            else:
-                bt.pair_device(jc_device_path)
-            print("Paired Joy-Con")
-
-        bt.set_alias("Nintendo Switch")
-        print("Connecting to Joy-Con: ", jc_MAC)
-        jc_ctrl.connect((jc_MAC, port_ctrl))
-        jc_itr.connect((jc_MAC, port_itr))
-        print("Got connection.")
-
         switch_ctrl.bind((bt.address, port_ctrl))
         switch_itr.bind((bt.address, port_itr))
 
@@ -176,11 +150,21 @@ if __name__ == "__main__":
         client_interrupt, interrupt_address = switch_itr.accept()
         print("Got Switch Interrupt Client Connection")
 
+        bt.set_alias("Nintendo Switch")
+        print("Connecting to Joy-Con: ", jc_MAC)
+        jc_ctrl.bind((socket.BDADDR_ANY, port_ctrl))
+        jc_itr.bind((socket.BDADDR_ANY, port_itr))
+        jc_ctrl.listen(1)
+        jc_itr.listen(1)
+        jc_client_ctrl, _ = jc_ctrl.accept()
+        jc_client_itr, _ = jc_itr.accept()
+        print("Got connection.")
+
         # Creating a non-blocking client interrupt connection
         fcntl.fcntl(client_interrupt, fcntl.F_SETFL, os.O_NONBLOCK)
 
         # Initial Input report from Joy-Con
-        jc_data = jc_itr.recv(350)
+        jc_data = jc_client_itr.recv(350)
         print("Got initial Joy-Con Empty Report")
         # print_msg_controller(jc_data)
         write_to_buffer(
@@ -204,7 +188,7 @@ if __name__ == "__main__":
                     "Switch Input Report Reply",
                     "comment")
         write_to_buffer(message_buffer, reply, "switch")
-        jc_itr.sendall(reply)
+        jc_client_itr.sendall(reply)
 
         # Sending Switch the proxy's device info
         if controller_type == JOYCON_R:
@@ -219,7 +203,7 @@ if __name__ == "__main__":
         # since it includes a MAC address.
         print("Waiting on Joy-Con Device Info")
         while True:
-            jc_data = jc_itr.recv(350)
+            jc_data = jc_client_itr.recv(350)
             if jc_data[1] == 0x21:
                 print("Got Device Info")
                 # print_msg_controller(jc_data)
@@ -249,8 +233,9 @@ if __name__ == "__main__":
                 reply = None
 
             if reply:
-                jc_itr.sendall(reply)
-            jc_data = jc_itr.recv(350)
+                print("Sending to Controller")
+                jc_client_itr.sendall(reply)
+            jc_data = jc_client_itr.recv(350)
 
             timer_new = int(jc_data[2])
             if timer_new < timer_old:
@@ -261,14 +246,20 @@ if __name__ == "__main__":
 
             # print_msg_controller(jc_data)
             write_to_buffer(message_buffer, jc_data, "controller")
-            client_interrupt.sendall(jc_data)
+
+            try:
+                client_interrupt.sendall(jc_data)
+            except BlockingIOError:
+                continue
+
+            time.sleep(1/2)
 
     except KeyboardInterrupt:
         print("Closing sockets")
 
-        time_new = perf_counter()
-        print(f"Total Delta: {(time_new - time_old) * 1000}")
-        print(f"Timer Counter: {timer_counter}")
+        # time_new = perf_counter()
+        # print(f"Total Delta: {(time_new - time_old) * 1000}")
+        # print(f"Timer Counter: {timer_counter}")
 
         jc_ctrl.close()
         jc_itr.close()

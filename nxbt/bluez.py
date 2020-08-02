@@ -154,6 +154,46 @@ def toggle_input_plugin(toggle):
     time.sleep(0.5)
 
 
+def find_devices_by_alias(alias):
+    """Finds the Bluetooth addresses of devices
+    that have a specified Bluetooth alias. Aliases
+    are converted to uppercase before comparison
+    as BlueZ usually converts aliases to uppercase.
+
+    :param address: The Bluetooth MAC address
+    :type address: string
+    :return: The path to the D-Bus object or None
+    :rtype: string or None
+    """
+
+    bus = dbus.SystemBus()
+    # Find all connected/paired/discovered devices
+    devices = find_objects(
+        bus,
+        SERVICE_NAME,
+        DEVICE_INTERFACE)
+
+    addresses = []
+    for path in devices:
+        # Get the device's address and paired status
+        device_props = dbus.Interface(
+            bus.get_object(SERVICE_NAME, path),
+            "org.freedesktop.DBus.Properties")
+        device_alias = device_props.Get(
+            DEVICE_INTERFACE,
+            "Alias").upper()
+        device_addr = device_props.Get(
+            DEVICE_INTERFACE,
+            "Address").upper()
+
+        # Check for an address match
+        if device_alias.upper() == alias.upper():
+            addresses.append(device_addr)
+
+    bus.close()
+    return addresses
+
+
 class BlueZ():
     """Exposes the BlueZ D-Bus API as a Python object.
     """
@@ -580,8 +620,8 @@ class BlueZ():
             DEVICE_INTERFACE)
         try:
             device.Connect()
-        except dbus.exceptions.DBusException:
-            print("Here1")
+        except dbus.exceptions.DBusException as e:
+            print("Error: ", e)
 
     def remove_device(self, path):
         """Removes a device that's been either discovered, paired,
