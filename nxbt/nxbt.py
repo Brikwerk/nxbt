@@ -45,6 +45,12 @@ class Buttons():
     ZL = 'ZL'
 
 
+class Sticks():
+
+    RIGHT_STICK = "R_STICK"
+    LEFT_STICK = "L_STICK"
+
+
 class NxbtCommands(Enum):
 
     CREATE_CONTROLLER = 0
@@ -187,6 +193,45 @@ class Nxbt():
         macro_buttons = " ".join(buttons)
         macro_times = f"{up}s \n{down}s"
         macro = macro_buttons + " " + macro_times
+
+        # Get a unique ID to identify the button press
+        # so we can check when the controller is done inputting it
+        macro_id = os.urandom(24).hex()
+        self.task_queue.put({
+            "command": NxbtCommands.INPUT_MACRO,
+            "arguments": {
+                "controller_index": controller_index,
+                "macro": macro,
+                "macro_id": macro_id,
+            }
+        })
+
+        if block:
+            while True:
+                finished = (self.manager_state
+                            [controller_index]["finished_macros"])
+                if macro_id in finished:
+                    break
+
+        return macro_id
+
+    def tilt_stick(self, controller_index, stick, x, y,
+                   tilted=0.1, released=0.1, block=True):
+
+        if controller_index not in self.manager_state.keys():
+            raise ValueError("Specified controller does not exist")
+
+        if x >= 0:
+            x_parsed = f'+{x:03}'
+        else:
+            x_parsed = f'{x:04}'
+
+        if y >= 0:
+            y_parsed = f'+{y:03}'
+        else:
+            y_parsed = f'{y:04}'
+
+        macro = f'{stick}@{x_parsed}{y_parsed} {tilted}s\n{released}s'
 
         # Get a unique ID to identify the button press
         # so we can check when the controller is done inputting it
