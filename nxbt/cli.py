@@ -1,14 +1,34 @@
 import argparse
-import time
 from random import randint
+import os
 
-from .web import start_web_app
 from .nxbt import Nxbt, PRO_CONTROLLER
+from .bluez import find_devices_by_alias
+from .tui import InputTUI
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('command', default=False, choices=['start', 'demo'],
-                    help="Specifies the Nxbt command to run")
+parser.add_argument('command', default=False, choices=['webapp', 'demo', 'macro', 'input'],
+                    help="""Specifies the nxbt command to run:
+                    webapp - Runs web server and allows for controller/macro
+                    input from a web browser.
+                    demo - Runs a demo macro (please ensure that your Switch
+                    is on the main menu's Change Grip/Order menu before running).
+                    macro - Allows for input of a specified macro from the command line
+                    (with the argument -s) or from a file (with the argument -f).
+                    input - Opens a TUI that allows for direct input from the keyboard
+                    to the Switch.""")
+parser.add_argument('-c', '--commands', required=False, default=False,
+                    help="""Used in conjunction with the macro command. Specifies a
+                    macro string or a file location to load a macro string from.""")
+parser.add_argument('-r', '--reconnect', required=False, default=False, action='store_true',
+                    help="""Used in conjunction with the macro or input command. If specified,
+                    nxbt will attmept to reconnect to any previously connected
+                    Nintendo Switch.""")
+parser.add_argument('-a', '--address', required=False, default=False,
+                    help="""Used in conjunction with the macro or input command. If specified,
+                    nxbt will attmept to reconnect to a specific Bluetooth MAC address
+                    of a Nintendo Switch.""")
 args = parser.parse_args()
 
 
@@ -71,6 +91,19 @@ def random_colour():
     ]
 
 
+def check_bluetooth_address(address):
+    """Check the validity of a given Bluetooth MAC address
+
+    :param address: A Bluetooth MAC address
+    :type address: str
+    :raises ValueError: If the Bluetooth address is invalid
+    """
+
+    address_bytes = len(address.split(":"))
+    if address_bytes != 6:
+        raise ValueError("Invalid Bluetooth address")
+
+
 def demo():
     """Loops over all available Bluetooth adapters
     and creates controllers on each. The last available adapter
@@ -93,9 +126,58 @@ def demo():
     nx.macro(controller_idxs[-1], MACRO)
 
 
+def macro():
+    """Runs a macro from the command line.
+    The macro can be from a specified file, a command line string,
+    or input from the user in an interactive process.
+    """
+
+    macro = None
+    if args.commands:
+        if os.path.isfile(args.commands):
+            with open(args.commands, "r") as f:
+                macro = f.read()
+        else:
+            macro = args.commands
+    else:
+        print("No macro commands were specified.")
+        print("Please use the -c argument to specify a macro string or a file location")
+        print("to load a macro string from.")
+        return
+
+    if args.reconnect:
+        reconnect_target = find_devices_by_alias("Nintendo Switch")
+    elif args.address:
+        check_bluetooth_address(args.address)
+        reconnect_target = args.address
+    else:
+        reconnect_target = None
+
+    nx = Nxbt()
+    print("Creating controller...")
+    index = nx.create_controller(
+        PRO_CONTROLLER,
+        colour_body=random_colour(),
+        colour_buttons=random_colour(),
+        reconnect_address=reconnect_target)
+    print("Waiting for connection...")
+    nx.wait_for_connection(index)
+    print("Connected!")
+
+    print("Running macro...")
+    nx.macro(index, macro)
+    print("Finished running macro. Exiting...")
+
+
 def main():
 
-    if args.command == 'start':
+    if args.command == 'webapp':
+        from .web import start_web_app
         start_web_app()
     elif args.command == 'demo':
         demo()
+    elif args.command == 'macro':
+        macro()
+    elif args.command == 'input':
+        tui = InputTUI()
+        tui.start()
