@@ -75,5 +75,5 @@ Since this falls under a hardware-specific function, it's not possible to
 emulate this unless a given piece of hardware matches this feature.
 
 In the future, a potential strategy to wake the Switch might be to connect
-a given device running NXBT over the dock's USB port and implement
+a given device running nxbt over the dock's USB port and implement
 Wake-On-USB instead.
