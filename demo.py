@@ -72,7 +72,7 @@ if __name__ == "__main__":
     for i in range(0, len(adapters)):
         index = nx.create_controller(
             nxbt.PRO_CONTROLLER,
-            adapters[i],
+            adapter_path=adapters[i],
             colour_body=random_colour(),
             colour_buttons=random_colour())
         controller_idxs.append(index)
