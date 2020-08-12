@@ -55,7 +55,7 @@ class ControllerServer():
 
         :param reconnect_address: The Bluetooth MAC address of a
         previously connected to Nintendo Switch, defaults to None
-        :type reconnect_address: string, optional
+        :type reconnect_address: string or list, optional
         """
 
         self.state["state"] = "initializing"
@@ -70,7 +70,6 @@ class ControllerServer():
                 self.controller.setup()
 
                 if reconnect_address:
-                    print("reconnecting")
                     itr, ctrl = self.reconnect(reconnect_address)
                 else:
                     itr, ctrl = self.connect()
@@ -84,9 +83,11 @@ class ControllerServer():
 
             self.mainloop(itr, ctrl)
 
-        except Exception:
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
             self.state["state"] = "crashed"
-            self.state["errors"] = traceback.format_exc()
+            self.state["errors"] = str(e)
             return self.state
 
     def mainloop(self, itr, ctrl):
@@ -286,24 +287,52 @@ class ControllerServer():
         """Attempts to reconnect with a Switch at the given address.
 
         :param reconnect_address: The Bluetooth MAC address of the Switch
-        :type reconnect_address: string
+        :type reconnect_address: string or list
         """
+
+        def recreate_sockets():
+            # Creating control and interrupt sockets
+            ctrl = socket.socket(
+                family=socket.AF_BLUETOOTH,
+                type=socket.SOCK_SEQPACKET,
+                proto=socket.BTPROTO_L2CAP)
+            itr = socket.socket(
+                family=socket.AF_BLUETOOTH,
+                type=socket.SOCK_SEQPACKET,
+                proto=socket.BTPROTO_L2CAP)
+
+            return itr, ctrl
 
         self.state["state"] = "reconnecting"
 
-        # Creating control and interrupt sockets
-        ctrl = socket.socket(
-            family=socket.AF_BLUETOOTH,
-            type=socket.SOCK_SEQPACKET,
-            proto=socket.BTPROTO_L2CAP)
-        itr = socket.socket(
-            family=socket.AF_BLUETOOTH,
-            type=socket.SOCK_SEQPACKET,
-            proto=socket.BTPROTO_L2CAP)
+        itr = None
+        ctrl = None
+        if type(reconnect_address) == list:
+            for address in reconnect_address:
+                try:
+                    test_itr, test_ctrl = recreate_sockets
 
-        # Setting up HID interrupt/control sockets
-        ctrl.connect((reconnect_address, 17))
-        itr.connect((reconnect_address, 19))
+                    # Setting up HID interrupt/control sockets
+                    test_ctrl.connect((reconnect_address, 17))
+                    test_itr.connect((reconnect_address, 19))
+
+                    itr = test_itr
+                    ctrl = test_ctrl
+                except OSError:
+                    pass
+        elif type(reconnect_address) == str:
+            test_itr, test_ctrl = recreate_sockets()
+
+            # Setting up HID interrupt/control sockets
+            test_ctrl.connect((reconnect_address, 17))
+            test_itr.connect((reconnect_address, 19))
+
+            itr = test_itr
+            ctrl = test_ctrl
+
+        if not itr and not ctrl:
+            raise OSError("Unable to reconnect to sockets at the given address(es)",
+                          reconnect_address)
 
         fcntl.fcntl(itr, fcntl.F_SETFL, os.O_NONBLOCK)
 
