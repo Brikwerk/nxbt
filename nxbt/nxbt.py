@@ -4,6 +4,8 @@ from enum import Enum
 import atexit
 import signal
 import os
+import sys
+import time
 
 import dbus
 
@@ -12,6 +14,7 @@ from .controller import ControllerTypes
 from .bluez import find_objects, toggle_input_plugin
 from .bluez import find_devices_by_alias
 from .bluez import SERVICE_NAME, ADAPTER_INTERFACE
+from .logging import create_logger
 
 
 JOYCON_L = ControllerTypes.JOYCON_L
@@ -82,7 +85,23 @@ class Nxbt():
     This allows for thread-safe control of emulated controllers.
     """
 
-    def __init__(self):
+    def __init__(self, debug=False, log_to_file=False, disable_logging=False):
+        """Initializes the necessary multiprocessing resources and starts
+        the multiprocessing processes.
+
+        :param debug: Enables the debugging functionality of
+        nxbt, defaults to False
+        :type debug: bool, optional
+        :param log_to_file: A boolean value that indiciates whether or not
+        a log should be saved to the current working directory, defaults to False
+        :type log_to_file: bool, optional
+        :param disable_logging: Routes all logging calls to a null log handler.
+        :type disable_logging: bool, optional, defaults to False.
+        """
+
+        self.debug = debug
+        self.logger = create_logger(
+            debug=self.debug, log_to_file=log_to_file, disable_logging=disable_logging)
 
         # Main queue for nbxt tasks
         self.task_queue = Queue()
@@ -93,7 +112,7 @@ class Nxbt():
         # Creates/manages shared resources
         self.resource_manager = Manager()
         # Shared dictionary for viewing overall nxbt state.
-        # Should only be read by threads and wrote to by
+        # Should treated as read-only except by
         # the main nxbt multiprocessing process.
         self.manager_state = self.resource_manager.dict()
         self.manager_state_lock = Lock()
@@ -156,12 +175,12 @@ class Nxbt():
         cm = __ControllerManager__(state, self.__bluetooth_lock__)
         # Ensure a SystemExit exception is raised on SIGTERM
         # so that we can gracefully shutdown.
-        signal.signal(signal.SIGTERM, lambda sigterm_handler: quit())
+        signal.signal(signal.SIGTERM, lambda sigterm_handler: sys.exit(0))
 
         try:
             while True:
                 try:
-                    msg = task_queue.get_nowait()
+                    msg = task_queue.get(timeout=5)
                 except queue.Empty:
                     msg = None
 
@@ -192,7 +211,7 @@ class Nxbt():
 
         finally:
             cm.shutdown()
-            quit()
+            sys.exit(0)
 
     def macro(self, controller_index, macro, block=True):
         """Used to input a given macro on a specified controller.
@@ -240,6 +259,8 @@ class Nxbt():
                             [controller_index]["finished_macros"])
                 if macro_id in finished:
                     break
+
+                time.sleep(1/120)  # Wait one Pro Controller cycle
 
         return macro_id
 
@@ -358,6 +379,8 @@ class Nxbt():
                 if macro_id in finished:
                     break
 
+                time.sleep(1/120)
+
     def clear_macros(self, controller_index):
         """Clears all running and queued macros on a specified
         controller.
@@ -468,6 +491,8 @@ class Nxbt():
                                 state["state"] == "reconnecting" or
                                 state["state"] == "crashed"):
                             break
+
+                    time.sleep(1/30)
         finally:
             self.__controller_lock__.release()
 

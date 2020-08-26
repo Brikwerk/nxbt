@@ -2,8 +2,8 @@ import socket
 import fcntl
 import os
 import time
-import traceback
 import queue
+import logging
 
 from .controller import Controller, ControllerTypes
 from ..bluez import BlueZ
@@ -17,6 +17,10 @@ class ControllerServer():
     def __init__(self, controller_type, adapter_path="/org/bluez/hci0",
                  state=None, task_queue=None, lock=None, colour_body=None,
                  colour_buttons=None):
+
+        self.logger = logging.getLogger('nxbt')
+        # Cache logging level to increase performance on checks
+        self.logger_level = self.logger.level
 
         if state:
             self.state = state
@@ -100,8 +104,8 @@ class ControllerServer():
             # Attempt to get output from Switch
             try:
                 reply = itr.recv(50)
-                if len(reply) > 40:
-                    print(format_msg_switch(reply))
+                if self.logger_level <= logging.DEBUG and len(reply) > 40:
+                    self.logger.debug(format_msg_switch(reply))
             except BlockingIOError:
                 reply = None
 
@@ -125,8 +129,8 @@ class ControllerServer():
             self.input.set_protocol_input(state=self.state)
             msg = self.protocol.get_report()
 
-            if reply and len(reply) > 45:
-                print(format_msg_controller(msg))
+            if self.logger_level <= logging.DEBUG and reply and len(reply) > 45:
+                self.logger.debug(format_msg_controller(msg))
 
             try:
                 itr.sendall(msg)
@@ -155,7 +159,7 @@ class ControllerServer():
 
         while self.reconnect_counter < 2:
             try:
-                print("Attempting to reconnect")
+                self.logger.debug("Attempting to reconnect")
                 # Reinitialize the protocol
                 self.protocol = ControllerProtocol(
                     self.controller_type,
@@ -172,12 +176,12 @@ class ControllerServer():
                         self.lock.release()
             except OSError:
                 self.reconnect_counter += 1
-                print(error)
+                self.logger.exception(error)
                 time.sleep(0.5)
 
         # If we can't reconnect, transition to attempting
         # to connect to any Switch.
-        print("Connecting")
+        self.logger.debug("Connecting to any Switch")
         self.reconnect_counter = 0
 
         # Reinitialize the protocol
@@ -189,9 +193,14 @@ class ControllerServer():
         self.input.reassign_protocol(self.protocol)
 
         # Since we were forced to attempt a reconnection
-        # we need to press the L and R buttons before
+        # we need to press the L/SL and R/SR buttons before
         # we can proceed with any input.
-        self.input.current_macro_commands = "L R 0.0s".strip(" ").split(" ")
+        if self.controller_type == ControllerTypes.PRO_CONTROLLER:
+            self.input.current_macro_commands = "L R 0.0s".strip(" ").split(" ")
+        elif self.controller_type == ControllerTypes.JOYCON_L:
+            self.input.current_macro_commands = "JCL_SL JCL_SR 0.0s".strip(" ").split(" ")
+        elif self.controller_type == ControllerTypes.JOYCON_R:
+            self.input.current_macro_commands = "JCR_SL JCR_SR 0.0s".strip(" ").split(" ")
 
         if self.lock:
             self.lock.acquire()
@@ -255,16 +264,16 @@ class ControllerServer():
             # Attempt to get output from Switch
             try:
                 reply = itr.recv(50)
-                if len(reply) > 40:
-                    print(format_msg_switch(reply))
+                if self.logger_level <= logging.DEBUG and len(reply) > 40:
+                    self.logger.debug(format_msg_switch(reply))
             except BlockingIOError:
                 reply = None
 
             self.protocol.process_commands(reply)
             msg = self.protocol.get_report()
 
-            if reply:
-                print(format_msg_controller(msg))
+            if self.logger_level <= logging.DEBUG and reply:
+                self.logger.debug(format_msg_controller(msg))
 
             try:
                 itr.sendall(msg)

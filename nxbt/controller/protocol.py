@@ -139,7 +139,6 @@ class ControllerProtocol():
 
         # Parsing the Switch's message
         message = SwitchReportParser(data)
-        # print(message.response)
 
         # Responding to the parsed message
         if message.response == SwitchResponses.REQUEST_DEVICE_INFO:
