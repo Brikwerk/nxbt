@@ -54,6 +54,8 @@ class ControllerServer():
 
         self.input = InputParser(self.protocol)
 
+        self.slow_input_frequency = False
+
     def run(self, reconnect_address=None):
         """Runs the mainloop of the controller server.
 
@@ -144,16 +146,24 @@ class ControllerServer():
             timer_end = time.perf_counter()
             elapsed_time = (timer_end - timer_start)
 
-            # Respond at 120Hz for Pro Controller
-            # or 60Hz for Joy-Cons.
-            # Sleep timers are compensated with the elapsed command
-            # processing time.
-            if self.controller_type == ControllerTypes.PRO_CONTROLLER:
-                if elapsed_time < 1/120:
-                    time.sleep(1/120 - elapsed_time)
+            if self.slow_input_frequency:
+                # Check if we can switch out of slow frequency input
+                if self.input.exited_grip_order_menu:
+                    self.slow_input_frequency = False
+
+                if elapsed_time < 1/15:
+                    time.sleep(1/15 - elapsed_time)
             else:
-                if elapsed_time < 1/60:
-                    time.sleep(1/60 - elapsed_time)
+                # Respond at 120Hz for Pro Controller
+                # or 60Hz for Joy-Cons.
+                # Sleep timers are compensated with the elapsed command
+                # processing time.
+                if self.controller_type == ControllerTypes.PRO_CONTROLLER:
+                    if elapsed_time < 1/120:
+                        time.sleep(1/120 - elapsed_time)
+                else:
+                    if elapsed_time < 1/60:
+                        time.sleep(1/60 - elapsed_time)
 
     def save_connection(self, error, state=None):
 
@@ -289,6 +299,9 @@ class ControllerServer():
             # Switch responds to packets slower during pairing
             # Pairing cycle responds optimally on a 15Hz loop
             time.sleep(1/15)
+
+        self.slow_input_frequency = True
+        self.input.exited_grip_order_menu = False
 
         return itr, ctrl
 

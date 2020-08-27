@@ -47,6 +47,10 @@ class InputParser():
 
         self.controller_input = None
 
+        # Whether or not input has been entered
+        # that would close the "Change Grip/Order" menu
+        self.exited_grip_order_menu = False
+
     def buffer_macro(self, macro, macro_id):
 
         # Doesn't have any info
@@ -194,6 +198,11 @@ class InputParser():
         # Checking if this is a wait macro command
         if len(macro_input) < 2:
             return
+
+        # Check if the Grip/Order menu would be closed
+        if not self.exited_grip_order_menu and (
+                'A' in macro_input or 'B' in macro_input or 'HOME' in macro_input):
+            self.exited_grip_order_menu = True
 
         # Arrays representing the 3 button bytes in the
         # standard input report as binary.
