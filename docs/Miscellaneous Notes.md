@@ -3,6 +3,16 @@
 This is a compilation of quirks, tidbits, and other info that pertain to
 this project.
 
+## Crashing a Switch with Malformed Packets
+
+After successfully connecting to a Nintendo Switch (either through
+reconnection or connection on the "Change Grip/Order" menu), simply
+send blank packets for about 2 to 3 seconds. The Switch will throw up
+an error screen and force a system restart.
+
+Refer to the "crash_switch.py" script in the "scripts" folder for an
+implementation and more details.
+
 ## Requirements for pairing with the Switch
 
 - Controller SDP record. They all share the same one (generally), so a only a single record is needed to emulate all three controllers
@@ -41,15 +51,12 @@ to #323232, the button colour set to #FFFFFF and the grip colours are set to
 In the future, Nintendo may produce more Pro Controller colours, however,
 at this point in time, setting the grip colour is not possible.
 
-## Reconnecting after the "Change Grip/Order" menu is opened
+## (Re)Connecting after the "Change Grip/Order" menu is opened
 
 Opening the "Change Grip/Order" menu (either through the Controllers menu or
 within a game) causes the Switch to cancel all Bluetooth connections to
-controllers and force a reconnection.
-
-The process is still a bit of a mystery (for me, at least) how exactly 
-a controller reconnects after the Grip/Order menu is opened. There are a
-couple of little quirks and gotchas to be aware of that I've run into:
+controllers and force a reconnection. There are a couple of little quirks
+and gotchas to be aware of that I've run into:
 
 1. Controllers must run through a complete reconnection after the Grip/Order
     menu is opened. A controller cannot revive or reconnect on its previous
@@ -61,11 +68,17 @@ couple of little quirks and gotchas to be aware of that I've run into:
     process.
 
 2. After reconnection on the Grip/Order menu, **emulated** controllers 
-    **must** press the L + R buttons before attempting regular input. This is a bit of a strange condition that I'm still grappling with. In some situations,
+    **must** press the L + R buttons before attempting regular input.
+    This is a bit of a strange condition that I'm still grappling with. In some situations,
     a non-emulated controller can get away with not pressing the L + R buttons
     and jump straight into regular input. I'm not 100% sure how they're able to, 
     however, I think it's an okay enough compromise to hardcode an L + R press
     after a reconnection.
+
+3. All communication must be done at 15Hz. Once the controller is off of the
+    Change Grip/Order menu, communication speeds up to 60Hz (Joy-Con) or 120Hz
+    (Pro Controller). If communication is not done at 15Hz, input can be severely
+    delayed or outright ignored.
 
 ## Waking the Switch Over Bluetooth
 

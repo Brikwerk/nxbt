@@ -54,6 +54,10 @@ Using the following equations, we can decode these values into meaningful ones.
 Each stick's data is treated as an array of byte values for the equations.
 
 ```python
+# The following code comes from DekuNukem's reverse engineering repo:
+# https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/spi_flash_notes.md
+# All credit goes to the original author(s)
+
 # The nine stick bytes are labelled stick_cal[0] - stick_cal[8] here
 data = [0] * 6
 data[0] = (stick_cal[1] << 8) & 0xF00 | stick_cal[0];
