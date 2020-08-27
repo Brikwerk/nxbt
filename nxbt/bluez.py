@@ -2,6 +2,7 @@ import subprocess
 import re
 import os
 import time
+import logging
 
 import dbus
 
@@ -199,6 +200,9 @@ class BlueZ():
     """
 
     def __init__(self, adapter_path="/org/bluez/hci0"):
+
+        self.logger = logging.getLogger('nxbt')
+
         self.bus = dbus.SystemBus()
         self.device_path = adapter_path
 
@@ -215,7 +219,7 @@ class BlueZ():
             raise Exception("Unable to find a bluetooth adapter")
 
         # Load the adapter's interface
-        print(f"Using adapter under object path: {self.device_path}")
+        self.logger.debug(f"Using adapter under object path: {self.device_path}")
         self.device = dbus.Interface(
             self.bus.get_object(
                 SERVICE_NAME,
@@ -621,7 +625,7 @@ class BlueZ():
         try:
             device.Connect()
         except dbus.exceptions.DBusException as e:
-            print("Error: ", e)
+            self.logger.exception(e)
 
     def remove_device(self, path):
         """Removes a device that's been either discovered, paired,
