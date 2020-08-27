@@ -8,7 +8,9 @@ from .tui import InputTUI
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('command', default=False, choices=['webapp', 'demo', 'macro', 'input'],
+parser.add_argument('command', default=False, choices=[
+                        'webapp', 'demo', 'macro', 'tui', 'addresses'
+                    ],
                     help="""Specifies the nxbt command to run:
                     webapp - Runs web server and allows for controller/macro
                     input from a web browser.
@@ -17,18 +19,24 @@ parser.add_argument('command', default=False, choices=['webapp', 'demo', 'macro'
                     macro - Allows for input of a specified macro from the command line
                     (with the argument -s) or from a file (with the argument -f).
                     input - Opens a TUI that allows for direct input from the keyboard
-                    to the Switch.""")
+                    to the Switch. addresses - Lists the Bluetooth MAC addresses for
+                    all previously connected Nintendo Switches""")
 parser.add_argument('-c', '--commands', required=False, default=False,
                     help="""Used in conjunction with the macro command. Specifies a
                     macro string or a file location to load a macro string from.""")
 parser.add_argument('-r', '--reconnect', required=False, default=False, action='store_true',
-                    help="""Used in conjunction with the macro or input command. If specified,
+                    help="""Used in conjunction with the macro or tui command. If specified,
                     nxbt will attmept to reconnect to any previously connected
                     Nintendo Switch.""")
 parser.add_argument('-a', '--address', required=False, default=False,
-                    help="""Used in conjunction with the macro or input command. If specified,
+                    help="""Used in conjunction with the macro or tui command. If specified,
                     nxbt will attmept to reconnect to a specific Bluetooth MAC address
                     of a Nintendo Switch.""")
+parser.add_argument('-d', '--debug', required=False, default=False, action='store_true',
+                    help="""Enables debug mode in nxbt.""")
+parser.add_argument('-l', '--logfile', required=False, default=False, action='store_true',
+                    help="""Enables logging to a file in the current working directory
+                    instead of stderr.""")
 args = parser.parse_args()
 
 
@@ -110,7 +118,7 @@ def demo():
     is used to run a macro.
     """
 
-    nx = Nxbt()
+    nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
     adapters = nx.get_available_adapters()
     controller_idxs = []
     for i in range(0, len(adapters)):
@@ -153,7 +161,7 @@ def macro():
     else:
         reconnect_target = None
 
-    nx = Nxbt()
+    nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
     print("Creating controller...")
     index = nx.create_controller(
         PRO_CONTROLLER,
@@ -169,6 +177,23 @@ def macro():
     print("Finished running macro. Exiting...")
 
 
+def list_switch_addresses():
+
+    addresses = find_devices_by_alias("Nintendo Switch")
+
+    if not addresses or len(addresses) < 1:
+        print("No Switches have previously connected to this device.")
+        return
+
+    print("---------------------------")
+    print("| Num | Address           |")
+    print("---------------------------")
+    for i in range(0, len(addresses)):
+        address = addresses[i]
+        print(f"| {i+1}   | {address} |")
+    print("---------------------------")
+
+
 def main():
 
     if args.command == 'webapp':
@@ -178,6 +203,8 @@ def main():
         demo()
     elif args.command == 'macro':
         macro()
-    elif args.command == 'input':
+    elif args.command == 'tui':
         tui = InputTUI()
         tui.start()
+    elif args.command == 'addresses':
+        list_switch_addresses()
