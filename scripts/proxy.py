@@ -7,6 +7,25 @@ controller before this script works.
 Note: If you get an Invalid Exchange error when running this script, this means
 that the Switch has paired to the controller, invalidating the original pairing
 key we created. You'll need to remove the controller before continuing.
+
+-- This was tested on a Raspberry Pi 4B (4GB) with Python 3.7.3 --
+
+-------------------------------------------------------------------------------
+Directions for Use:
+-------------------------------------------------------------------------------
+
+1.) Begin with both the Switch and Pro Controller off (Sleep Mode is fine).
+2.) Start the proxy.py script
+3.) Immediately after starting the script, press and hold the small, circular
+button on the back of the Pro Controller (near the USB-C input) until the
+player lights begin Flashing.
+4.) Once the script prints "Got Connection" and then "Waiting for Switch to
+connect...", start up your Switch and navigate to the "Pair/Change Grip" menu.
+5.) The Switch should connect the controller Proxy and the script should enter
+the mainloop.
+6.) Perform any actions with your controller that you want recorded.
+7.) Press Ctrl-C to end the script and dump the commands in the current
+working directory.
 """
 
 import socket
