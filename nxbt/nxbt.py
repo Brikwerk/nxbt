@@ -78,7 +78,7 @@ class Nxbt():
     Upon creation, a multiprocessing Process is spun off to act at the
     manager for all emulated Nintendo Switch controllers. Messages
     are passed into a queue which is consumed and acted upon by the
-    __command_manager__.
+    _command_manager.
 
     All function calls that interact or control the emulated controllers
     are simply message constructors that submit to the central task_queue.
@@ -107,7 +107,7 @@ class Nxbt():
         self.task_queue = Queue()
 
         # Sychronizes bluetooth actions
-        self.__bluetooth_lock__ = Lock()
+        self._bluetooth_lock = Lock()
 
         # Creates/manages shared resources
         self.resource_manager = Manager()
@@ -119,10 +119,10 @@ class Nxbt():
 
         # Shared, controller management properties.
         # The controller lock is used to sychronize use.
-        self.__controller_lock__ = Lock()
-        self.__controller_counter__ = 0
-        self.__adapters_in_use__ = {}
-        self.__controller_adapter_lookup__ = {}
+        self._controller_lock = Lock()
+        self._controller_counter = 0
+        self._adapters_in_use = {}
+        self._controller_adapter_lookup = {}
 
         # Disable the BlueZ input plugin so we can use the
         # HID control/interrupt Bluetooth ports
@@ -133,7 +133,7 @@ class Nxbt():
 
         # Starting the nxbt worker process
         self.controllers = Process(
-            target=self.__command_manager__,
+            target=self._command_manager,
             args=((self.task_queue), (self.manager_state)))
         # Disabling daemonization since we need to spawn
         # other controller processes, however, this means
@@ -158,7 +158,7 @@ class Nxbt():
         # Re-enable the BlueZ input plugin
         toggle_input_plugin(True)
 
-    def __command_manager__(self, task_queue, state):
+    def _command_manager(self, task_queue, state):
         """Used as the main multiprocessing Process that is launched
         on startup to handle the message passing and instantiation of
         the controllers. Messages are pulled out of a Queue and passed
@@ -172,7 +172,7 @@ class Nxbt():
         :type state: multiprocessing.Manager().dict
         """
 
-        cm = __ControllerManager__(state, self.__bluetooth_lock__)
+        cm = _ControllerManager(state, self._bluetooth_lock)
         # Ensure a SystemExit exception is raised on SIGTERM
         # so that we can gracefully shutdown.
         signal.signal(signal.SIGTERM, lambda sigterm_handler: sys.exit(0))
@@ -449,12 +449,12 @@ class Nxbt():
             if adapter_path not in self.get_available_adapters():
                 raise ValueError("Specified adapter is unavailable")
 
-            if adapter_path in self.__adapters_in_use__.keys():
+            if adapter_path in self._adapters_in_use.keys():
                 raise ValueError("Specified adapter in use")
         else:
             # Get all adapters we can use
             usable_adapters = list(
-                set(self.get_available_adapters()) - set(self.__adapters_in_use__))
+                set(self.get_available_adapters()) - set(self._adapters_in_use))
             if len(usable_adapters) > 0:
                 # Use the first available adapter
                 adapter_path = usable_adapters[0]
@@ -463,11 +463,11 @@ class Nxbt():
 
         controller_index = None
         try:
-            self.__controller_lock__.acquire()
+            self._controller_lock.acquire()
             self.task_queue.put({
                 "command": NxbtCommands.CREATE_CONTROLLER,
                 "arguments": {
-                    "controller_index": self.__controller_counter__,
+                    "controller_index": self._controller_counter,
                     "controller_type": controller_type,
                     "adapter_path": adapter_path,
                     "colour_body": colour_body,
@@ -475,10 +475,10 @@ class Nxbt():
                     "reconnect_address": reconnect_address,
                 }
             })
-            controller_index = self.__controller_counter__
-            self.__controller_counter__ += 1
-            self.__adapters_in_use__[adapter_path] = controller_index
-            self.__controller_adapter_lookup__[controller_index] = adapter_path
+            controller_index = self._controller_counter
+            self._controller_counter += 1
+            self._adapters_in_use[adapter_path] = controller_index
+            self._controller_adapter_lookup[controller_index] = adapter_path
 
             # Block until the controller is ready
             # This needs to be done to prevent race conditions
@@ -494,7 +494,7 @@ class Nxbt():
 
                     time.sleep(1/30)
         finally:
-            self.__controller_lock__.release()
+            self._controller_lock.release()
 
         return controller_index
 
@@ -509,12 +509,12 @@ class Nxbt():
         if controller_index not in self.manager_state.keys():
             raise ValueError("Specified controller does not exist")
 
-        self.__controller_lock__.acquire()
+        self._controller_lock.acquire()
         try:
-            adapter_path = self.__controller_adapter_lookup__.pop(controller_index, None)
-            self.__adapters_in_use__.pop(adapter_path, None)
+            adapter_path = self._controller_adapter_lookup.pop(controller_index, None)
+            self._adapters_in_use.pop(adapter_path, None)
         finally:
-            self.__controller_lock__.release()
+            self._controller_lock.release()
 
         self.task_queue.put({
             "command": NxbtCommands.REMOVE_CONTROLLER,
@@ -588,7 +588,7 @@ class Nxbt():
         return self.manager_state
 
 
-class __ControllerManager__():
+class _ControllerManager():
     """Used as the manager for all controllers. Each controller is
     a daemon multiprocessing Process that the ControllerManager
     object creates and manages.
@@ -603,8 +603,8 @@ class __ControllerManager__():
         self.state = state
         self.lock = lock
         self.controller_resources = Manager()
-        self.__controller_queues__ = {}
-        self.__children__ = {}
+        self._controller_queues = {}
+        self._children = {}
 
     def create_controller(self, index, controller_type, adapter_path,
                           colour_body=None, colour_buttons=None,
@@ -639,7 +639,7 @@ class __ControllerManager__():
         controller_state["finished_macros"] = []
         controller_state["errors"] = False
 
-        self.__controller_queues__[index] = controller_queue
+        self._controller_queues[index] = controller_queue
 
         self.state[index] = controller_state
 
@@ -652,12 +652,12 @@ class __ControllerManager__():
                                   colour_buttons=colour_buttons)
         controller = Process(target=server.run, args=(reconnect_address,))
         controller.daemon = True
-        self.__children__[index] = controller
+        self._children[index] = controller
         controller.start()
 
     def input_macro(self, index, macro, macro_id):
 
-        self.__controller_queues__[index].put({
+        self._controller_queues[index].put({
             "type": "macro",
             "macro": macro,
             "macro_id": macro_id
@@ -665,26 +665,26 @@ class __ControllerManager__():
 
     def stop_macro(self, index, macro_id):
 
-        self.__controller_queues__[index].put({
+        self._controller_queues[index].put({
             "type": "stop",
             "macro_id": macro_id,
         })
 
     def clear_macros(self, index):
 
-        self.__controller_queues__[index].put({
+        self._controller_queues[index].put({
             "type": "clear",
         })
 
     def remove_controller(self, index):
 
-        self.__children__[index].kill()
+        self._children[index].kill()
 
     def shutdown(self):
 
         # Loop over children and kill all
-        for index in self.__children__.keys():
-            child = self.__children__[index]
+        for index in self._children.keys():
+            child = self._children[index]
             child.terminate()
 
         self.controller_resources.shutdown()
