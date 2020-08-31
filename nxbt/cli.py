@@ -112,6 +112,19 @@ def check_bluetooth_address(address):
         raise ValueError("Invalid Bluetooth address")
 
 
+def get_reconnect_target():
+
+    if args.reconnect:
+        reconnect_target = find_devices_by_alias("Nintendo Switch")
+    elif args.address:
+        check_bluetooth_address(args.address)
+        reconnect_target = args.address
+    else:
+        reconnect_target = None
+
+    return reconnect_target
+
+
 def demo():
     """Loops over all available Bluetooth adapters
     and creates controllers on each. The last available adapter
@@ -153,13 +166,7 @@ def macro():
         print("to load a macro string from.")
         return
 
-    if args.reconnect:
-        reconnect_target = find_devices_by_alias("Nintendo Switch")
-    elif args.address:
-        check_bluetooth_address(args.address)
-        reconnect_target = args.address
-    else:
-        reconnect_target = None
+    reconnect_target = get_reconnect_target()
 
     nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
     print("Creating controller...")
@@ -204,7 +211,8 @@ def main():
     elif args.command == 'macro':
         macro()
     elif args.command == 'tui':
-        tui = InputTUI()
+        reconnect_target = get_reconnect_target()
+        tui = InputTUI(reconnect_target=reconnect_target)
         tui.start()
     elif args.command == 'addresses':
         list_switch_addresses()

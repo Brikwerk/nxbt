@@ -28,7 +28,8 @@ class ControllerServer():
             self.state = {
                 "state": "",
                 "finished_macros": [],
-                "errors": None
+                "errors": None,
+                "direct_input": None
             }
 
         self.task_queue = task_queue
@@ -114,21 +115,26 @@ class ControllerServer():
             # Getting any inputs from the task queue
             if self.task_queue:
                 try:
-                    msg = self.task_queue.get_nowait()
-                    if msg and msg["type"] == "macro":
-                        self.input.buffer_macro(
-                            msg["macro"], msg["macro_id"])
-                    elif msg and msg["type"] == "stop":
-                        self.input.stop_macro(
-                            msg["macro_id"], state=self.state)
-                    elif msg and msg["type"] == "clear":
-                        self.input.clear_macros(
-                            state=self.state)
+                    while True:
+                        msg = self.task_queue.get_nowait()
+                        if msg and msg["type"] == "macro":
+                            self.input.buffer_macro(
+                                msg["macro"], msg["macro_id"])
+                        elif msg and msg["type"] == "stop":
+                            self.input.stop_macro(
+                                msg["macro_id"], state=self.state)
+                        elif msg and msg["type"] == "clear":
+                            self.input.clear_macros()
                 except queue.Empty:
                     pass
 
+            # Set Direct Input
+            if self.state["direct_input"]:
+                self.input.set_controller_input(self.state["direct_input"])
+
             self.protocol.process_commands(reply)
             self.input.set_protocol_input(state=self.state)
+
             msg = self.protocol.get_report()
 
             if self.logger_level <= logging.DEBUG and reply and len(reply) > 45:
@@ -331,16 +337,17 @@ class ControllerServer():
         ctrl = None
         if type(reconnect_address) == list:
             for address in reconnect_address:
+                test_itr, test_ctrl = recreate_sockets()
                 try:
-                    test_itr, test_ctrl = recreate_sockets
-
                     # Setting up HID interrupt/control sockets
-                    test_ctrl.connect((reconnect_address, 17))
-                    test_itr.connect((reconnect_address, 19))
+                    test_ctrl.connect((address, 17))
+                    test_itr.connect((address, 19))
 
                     itr = test_itr
                     ctrl = test_ctrl
                 except OSError:
+                    test_itr.close()
+                    test_ctrl.close()
                     pass
         elif type(reconnect_address) == str:
             test_itr, test_ctrl = recreate_sockets()

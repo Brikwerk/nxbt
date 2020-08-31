@@ -6,6 +6,7 @@ import signal
 import os
 import sys
 import time
+import json
 
 import dbus
 
@@ -22,6 +23,56 @@ JOYCON_R = ControllerTypes.JOYCON_R
 PRO_CONTROLLER = ControllerTypes.PRO_CONTROLLER
 
 
+DIRECT_INPUT_PACKET = {
+    # Sticks
+    "L_STICK": {
+        "PRESSED": False,
+        "X_VALUE": 0,
+        "Y_VALUE": 0,
+        # Keyboard position calculation values
+        "LS_UP": False,
+        "LS_LEFT": False,
+        "LS_RIGHT": False,
+        "LS_DOWN": False
+    },
+    "R_STICK": {
+        "PRESSED": False,
+        "X_VALUE": 0,
+        "Y_VALUE": 0,
+        # Keyboard position calculation values
+        "RS_UP": False,
+        "RS_LEFT": False,
+        "RS_RIGHT": False,
+        "RS_DOWN": False
+    },
+    # Dpad
+    "DPAD_UP": False,
+    "DPAD_LEFT": False,
+    "DPAD_RIGHT": False,
+    "DPAD_DOWN": False,
+    # Triggers
+    "L": False,
+    "ZL": False,
+    "R": False,
+    "ZR": False,
+    # Joy-Con Specific Buttons
+    "JCL_SR": False,
+    "JCL_SL": False,
+    "JCR_SR": False,
+    "JCR_SL": False,
+    # Meta buttons
+    "PLUS": False,
+    "MINUS": False,
+    "HOME": False,
+    "CAPTURE": False,
+    # Buttons
+    "Y": False,
+    "X": False,
+    "B": False,
+    "A": False
+}
+
+
 class Buttons():
     """The button object containing the button string constants.
     """
@@ -34,8 +85,8 @@ class Buttons():
     JCL_SL = 'JCL_SL'
     R = 'R'
     ZR = 'ZR'
-    MINUS = '-'
-    PLUS = '+'
+    MINUS = 'MINUS'
+    PLUS = 'PLUS'
     R_STICK_PRESS = 'R_STICK_PRESS'
     L_STICK_PRESS = 'L_STICK_PRESS'
     HOME = 'HOME'
@@ -206,8 +257,9 @@ class Nxbt():
                         cm.clear_macros(
                             msg["arguments"]["controller_index"])
                     elif msg["command"] == NxbtCommands.REMOVE_CONTROLLER:
-                        cm.clear_macros(
-                            msg["arguments"]["controller_index"])
+                        index = msg["arguments"]["controller_index"]
+                        cm.clear_macros(index)
+                        cm.remove_controller(index)
 
         finally:
             cm.shutdown()
@@ -385,6 +437,9 @@ class Nxbt():
         """Clears all running and queued macros on a specified
         controller.
 
+        WARNING: Any blocking macro calls will continue to run
+        forever if this command is run.
+
         :param controller_index: The index of a given controller
         :type controller_index: int
         :raises ValueError: If the controller_index does not exist
@@ -407,6 +462,39 @@ class Nxbt():
 
         for controller in self.manager_state.keys():
             self.clear_macros(controller)
+
+    def set_controller_input(self, controller_index, input_packet):
+        """Sets the controllers buttons and analog sticks for 1 cycle.
+        This means that exactly 1 packet will be sent to the Switch with
+        input specified with this method. To keep a continuous input
+        stream of a desired input, packets must be set at a rate that
+        roughly matches the set controller. Eg: An emulated Pro Controller's
+        input must be set at roughly 120Hz and a Joy-Con's at 60Hz.
+
+        :param controller_index: The index of the emulated controller
+        :type controller_index: int
+        :param input_packet: The input packet with the desired input. This
+        *must* be an instance of the create_input_packet method.
+        :type input_packet: dict
+        :raises ValueError: On bad controller index
+        """
+
+        if controller_index not in self.manager_state.keys():
+            raise ValueError("Specified controller does not exist")
+
+        self.manager_state[controller_index]["direct_input"] = input_packet
+
+    def create_input_packet(self):
+        """Creates an input packet that is used to specify the input
+        of a controller for a single cycle.
+
+        :return: An input packet dictionary
+        :rtype: dict
+        """
+
+        # Create a copy of the direct input packet in a thread safe manner.
+        # NOTE: Using the copy.deepcopy method of copying dicts IS NOT thread safe.
+        return json.loads(json.dumps(DIRECT_INPUT_PACKET))
 
     def create_controller(self, controller_type, adapter_path=None,
                           colour_body=None, colour_buttons=None,
@@ -578,6 +666,9 @@ class Nxbt():
                         A list of UUIDs
                     "errors":
                         A string with the crash error
+                    "direct_input":
+                        A dictionary that represents all inputs
+                        being directly input into the controller.
                 }
         }
 
@@ -638,6 +729,7 @@ class _ControllerManager():
         controller_state["state"] = "initializing"
         controller_state["finished_macros"] = []
         controller_state["errors"] = False
+        controller_state["direct_input"] = json.loads(json.dumps(DIRECT_INPUT_PACKET))
 
         self._controller_queues[index] = controller_queue
 

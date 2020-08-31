@@ -3,7 +3,7 @@ import random
 from time import perf_counter
 
 from .controller import ControllerTypes
-from .utils import replace_subarray, format_msg_controller
+from .utils import replace_subarray
 
 
 class SwitchResponses(Enum):

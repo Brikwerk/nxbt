@@ -1,4 +1,55 @@
 from time import perf_counter
+from json import dumps
+
+
+DIRECT_INPUT_IDLE_PACKET = {
+    # Sticks
+    "L_STICK": {
+        "PRESSED": False,
+        "X_VALUE": 0,
+        "Y_VALUE": 0,
+        # Keyboard position calculation values
+        "LS_UP": False,
+        "LS_LEFT": False,
+        "LS_RIGHT": False,
+        "LS_DOWN": False
+    },
+    "R_STICK": {
+        "PRESSED": False,
+        "X_VALUE": 0,
+        "Y_VALUE": 0,
+        # Keyboard position calculation values
+        "RS_UP": False,
+        "RS_LEFT": False,
+        "RS_RIGHT": False,
+        "RS_DOWN": False
+    },
+    # Dpad
+    "DPAD_UP": False,
+    "DPAD_LEFT": False,
+    "DPAD_RIGHT": False,
+    "DPAD_DOWN": False,
+    # Triggers
+    "L": False,
+    "ZL": False,
+    "R": False,
+    "ZR": False,
+    # Joy-Con Specific Buttons
+    "JCL_SR": False,
+    "JCL_SL": False,
+    "JCR_SR": False,
+    "JCR_SL": False,
+    # Meta buttons
+    "PLUS": False,
+    "MINUS": False,
+    "HOME": False,
+    "CAPTURE": False,
+    # Buttons
+    "Y": False,
+    "X": False,
+    "B": False,
+    "A": False
+}
 
 
 class InputParser():
@@ -85,7 +136,7 @@ class InputParser():
 
         return
 
-    def clear_macros(self, state=None):
+    def clear_macros(self):
 
         self.current_macro = None
         self.current_macro_id = None
@@ -102,7 +153,8 @@ class InputParser():
 
     def set_protocol_input(self, state=None):
 
-        if self.controller_input:
+        # Act on direct input if we're not getting idle packets
+        if dumps(self.controller_input) != dumps(DIRECT_INPUT_IDLE_PACKET):
             self.parse_controller_input(self.controller_input)
             self.controller_input = None
 
@@ -139,6 +191,91 @@ class InputParser():
                     state["finished_macros"] = finished
 
     def parse_controller_input(self, controller_input):
+
+        # Check for input validity
+        if type(controller_input) != dict:
+            return
+
+        # Check if the Grip/Order menu would be closed
+        if not self.exited_grip_order_menu and (
+                controller_input["A"] or controller_input["B"] or controller_input["HOME"]):
+            self.exited_grip_order_menu = True
+
+        # Arrays representing the 3 button bytes in the
+        # standard input report as binary.
+        upper = ['0'] * 8
+        shared = ['0'] * 8
+        lower = ['0'] * 8
+        # Upper Byte
+        if controller_input["Y"]:
+            upper[7] = '1'
+        if controller_input["X"]:
+            upper[6] = '1'
+        if controller_input["B"]:
+            upper[5] = '1'
+        if controller_input["A"]:
+            upper[4] = '1'
+        if controller_input["JCL_SR"]:
+            upper[3] = '1'
+        if controller_input["JCL_SL"]:
+            upper[2] = '1'
+        if controller_input["R"]:
+            upper[1] = '1'
+        if controller_input["ZR"]:
+            upper[0] = '1'
+
+        # Shared byte
+        if controller_input["MINUS"]:
+            shared[7] = '1'
+        if controller_input["PLUS"]:
+            shared[6] = '1'
+        if controller_input["R_STICK"]["PRESSED"]:
+            shared[5] = '1'
+        if controller_input["L_STICK"]["PRESSED"]:
+            shared[4] = '1'
+        if controller_input["HOME"]:
+            shared[3] = '1'
+        if controller_input["CAPTURE"]:
+            shared[2] = '1'
+
+        # Lower byte
+        if controller_input["DPAD_DOWN"]:
+            lower[7] = '1'
+        if controller_input["DPAD_UP"]:
+            lower[6] = '1'
+        if controller_input["DPAD_RIGHT"]:
+            lower[5] = '1'
+        if controller_input["DPAD_LEFT"]:
+            lower[4] = '1'
+        if controller_input["JCR_SR"]:
+            lower[3] = '1'
+        if controller_input["JCR_SL"]:
+            lower[2] = '1'
+        if controller_input["L"]:
+            lower[1] = '1'
+        if controller_input["ZL"]:
+            lower[0] = '1'
+
+        # Analog Stick Positions
+        stick_left = self.stick_ratio_to_calibrated_position(
+            controller_input["L_STICK"]["X_VALUE"] / 100,
+            controller_input["L_STICK"]["Y_VALUE"] / 100,
+            "L_STICK"
+        )
+        stick_right = self.stick_ratio_to_calibrated_position(
+            controller_input["R_STICK"]["X_VALUE"] / 100,
+            controller_input["R_STICK"]["Y_VALUE"] / 100,
+            "R_STICK"
+        )
+
+        # Converting binary strings to ints
+        upper_byte = int("".join(upper), 2)
+        shared_byte = int("".join(shared), 2)
+        lower_byte = int("".join(lower), 2)
+
+        self.protocol.set_button_inputs(upper_byte, shared_byte, lower_byte)
+        self.protocol.set_left_stick_inputs(stick_left)
+        self.protocol.set_right_stick_inputs(stick_right)
 
         return controller_input
 
@@ -233,9 +370,9 @@ class InputParser():
                 upper[0] = '1'
 
             # Shared byte
-            elif button == "-":
+            elif button == "MINUS":
                 shared[7] = '1'
-            elif button == "+":
+            elif button == "PLUS":
                 shared[6] = '1'
             elif button == "R_STICK_PRESS":
                 shared[5] = '1'
