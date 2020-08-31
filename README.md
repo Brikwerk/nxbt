@@ -18,6 +18,14 @@ Functionality is currently under development.
 
 TBA
 
+## TODO
+
+- Rebinding of keys within the TUI and webapp
+- Incorporate React and components library into the webapp
+- Allow for recording macros from direct input from within the webapp
+- Allow for playing recorded direct input macros from the API
+- Write a full testing suite
+
 ## Issues
 
 - Switching from the slow frequency mode on the "Change Grip/Order" menu to the full input report
