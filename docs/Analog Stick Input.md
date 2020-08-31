@@ -1,6 +1,6 @@
 # Analog Stick Input Information
 
-**Disclaimer:** A chunk info within this document is sourced from the Switch reverse engineering
+**Disclaimer:** A chunk of info within this document is sourced from the Switch reverse engineering
 effort at [DekuNukem's Repository](https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering).
 
 The below sections contain info on the formulation and derivation of data
