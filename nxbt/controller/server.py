@@ -4,6 +4,7 @@ import os
 import time
 import queue
 import logging
+import traceback
 
 from .controller import Controller, ControllerTypes
 from ..bluez import BlueZ
@@ -92,9 +93,9 @@ class ControllerServer():
 
         except KeyboardInterrupt:
             pass
-        except Exception as e:
+        except Exception:
             self.state["state"] = "crashed"
-            self.state["errors"] = str(e)
+            self.state["errors"] = traceback.format_exc()
             return self.state
 
     def mainloop(self, itr, ctrl):

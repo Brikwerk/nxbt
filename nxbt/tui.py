@@ -320,6 +320,7 @@ class InputTUI():
 
         state = None
         spinner = LoadingSpinner()
+        errors = None
         try:
             with term.cbreak(), term.keypad(), term.location(), term.hidden_cursor():
                 print(term.home + term.clear)
@@ -346,6 +347,9 @@ class InputTUI():
                             loading_text = "Reconnecting to Nintendo Switch"
                         elif state == "connected":
                             loading_text = "Connected!"
+                        elif state == "crashed":
+                            errors = self.nx.state[self.controller_index]["errors"]
+                            exit(1)
                         self.render_start_screen(term, loading_text)
 
                     print(term.move_y((term.height // 2) + 6))
@@ -369,6 +373,9 @@ class InputTUI():
             pass
         finally:
             print(term.clear())
+            if errors:
+                print("The TUI encountered the following errors:")
+                print(errors)
 
     def remote_input_loop(self, term):
 
