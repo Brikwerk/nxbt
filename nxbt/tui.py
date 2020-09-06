@@ -11,7 +11,7 @@ from .nxbt import Nxbt, PRO_CONTROLLER
 
 class LoadingSpinner():
 
-    SPINNER_CHARS = ['⢸', '⣰', '⣤', '⣆', '⡇', '⠏', '⠛', '⠹']
+    SPINNER_CHARS = ['■ □ □ □', '□ ■ □ □', '□ □ ■ □', '□ □ □ ■', '□ □ □ ■', '□ □ ■ □', '□ ■ □ □', '■ □ □ □']  # noqa
 
     def __init__(self):
 
@@ -332,7 +332,7 @@ class InputTUI():
                 # Loading Screen
                 while inp != chr(113):  # Checking for q press
                     # Check key at 15hz
-                    inp = term.inkey(timeout=1/15)
+                    inp = term.inkey(timeout=1/30)
                     new_state = self.nx.state[self.controller_index]["state"]
 
                     if new_state != state:
