@@ -177,7 +177,10 @@ class Nxbt():
 
         # Disable the BlueZ input plugin so we can use the
         # HID control/interrupt Bluetooth ports
-        toggle_input_plugin(False)
+        try:
+            toggle_input_plugin(False)
+        except PermissionError:
+            pass
 
         # Exit handler
         atexit.register(self._on_exit)
@@ -661,6 +664,7 @@ class Nxbt():
                         "initializing" or
                         "connecting" or
                         "reconnecting" or
+                        "connected" or
                         "crashed"
                     "finished_macros":
                         A list of UUIDs
@@ -771,6 +775,7 @@ class _ControllerManager():
     def remove_controller(self, index):
 
         self._children[index].kill()
+        self.state.pop(index, None)
 
     def shutdown(self):
 

@@ -103,9 +103,6 @@ def toggle_input_plugin(toggle):
     :raises Exception: If the units can't be reloaded
     """
 
-    if os.geteuid() != 0:
-        raise PermissionError("The input plugin must be toggled as root")
-
     service_path = "/lib/systemd/system/bluetooth.service"
     service = None
     with open(service_path, "r") as f:
