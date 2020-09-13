@@ -1,0 +1,636 @@
+/**************************************************
+General Stylings
+**************************************************/
+
+html, body {
+    padding: 0;
+    margin: 0;
+    background-color: #1a1f28;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+* {
+    color: #d9dada;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    height: 100%;
+    width: 100%;
+    padding-top: 5rem;
+    box-sizing: border-box;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem 4rem;
+}
+
+footer p, footer a {
+    margin: 0;
+    color: #3f5066;
+}
+
+h1 {
+    font-weight: 700;
+}
+
+p {
+    padding: 0;
+    line-height: 1.4;
+}
+
+button {
+    color: #1a1f28;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: auto;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+    -webkit-appearance: none;
+    background-color: #d9dada;
+    font-size: 0.9rem;
+}
+
+button:hover {
+    cursor: pointer;
+}
+
+.mono {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important
+}
+
+.surface {
+    display: block;
+    background-color: #2c3544;
+    border-radius: 5px;
+    box-shadow: 0px 1px 2px -1px rgba(0,0,0,0.2), 0px 4px 2px 0px rgba(0,0,0,0.14);
+}
+
+.surface-lighter {
+    display: block;
+    background-color: #3a4759;
+    border-radius: 5px;
+    box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)
+}
+
+.hidden {
+    display: none !important;
+}
+
+.text-section p {
+    text-align: left;
+}
+
+/**************************************************
+Top Bar Stying
+**************************************************/
+
+.top-bar {
+    display: block;
+    position: fixed;
+    width: 100%;
+    background-color: #2c3544;
+    box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14);
+    z-index: 100;
+}
+
+.top-bar-wrapper {
+    background-color: #2c3544;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: auto;
+    padding: 1rem 2rem;
+}
+
+.top-bar-wrapper h1 {
+    margin: 0;
+    display: inline-block;
+}
+
+.top-bar-wrapper .mono {
+    display: inline-block;
+}
+
+.top-bar-spacer {
+    width: 100%;
+    height: 5rem;
+}
+
+/**************************************************
+Status Indicator Stying
+**************************************************/
+
+#status-indicator {
+    display: block;
+    background-color: #3a4759;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border-radius: 5px;
+    position: relative;
+}
+
+#status-indicator-text {
+    font-size: 1rem;
+    text-transform: uppercase;
+}
+
+#status-indicator-light {
+    border-radius: 100%;
+    height: 0.8rem;
+    width: 0.8rem;
+    position: absolute;
+    left: 1rem;
+    top: 0.8rem;
+}
+
+.indicator-green {
+    background-color: #5fc54f;
+    border: 1px solid #55a83d;
+}
+
+.indicator-yellow {
+    background-color: #f6be45;
+    border: 1px solid #d9a33b;
+}
+
+.indicator-red {
+    background-color: #ef6b5c;
+    border: 1px solid #d25647;
+}
+
+/**************************************************
+Controller Selection Stying
+**************************************************/
+
+#controller-selection {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    padding-top: 2.5%;
+    padding-bottom: 2.5%;
+}
+
+#controller-selection h1 {
+    width: 100%;
+    margin: 0.5rem 0;
+}
+
+.controller-option {
+    position: relative;
+    width: 18rem;
+    padding: 0 0 1.5rem 0;
+    margin: 1rem;
+    display: inline-block;
+    font-weight: 500;
+    text-align: center;
+    text-transform: uppercase;
+    transition: 0.1s;
+    bottom: 0px;
+}
+
+.controller-option:hover {
+    cursor: pointer;
+    bottom: 5px;
+    transition: 0.1s;
+}
+
+.controller-option-img-wrapper {
+    display: block;
+    background-color: #3a4759;
+    width: 100%;
+    padding: 2rem 0;
+    border-radius: 5px;
+    margin-bottom: 1.5rem;
+}
+
+.controller-option-img-wrapper img {
+    max-height: 10rem;
+    display: block;
+    width: 100%;
+}
+
+@media screen and (max-width: 960px) {
+    #controller-selection {
+        display: block;
+    }
+
+    .controller-option {
+        width: 90%;
+        margin: 0.5rem;
+    }
+
+    .controller-option-img-wrapper img {
+        max-height: 5rem;
+    }
+}
+
+/**************************************************
+Loader Stying
+**************************************************/
+
+#loader {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    min-height: 40%;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    margin-top: 10%;
+    padding: 2rem 20%;
+}
+
+#loader-progress-wrapper {
+    width: 100%;
+    padding: 2rem 1rem;
+}
+
+#loader-blocks {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 8rem;
+    margin: auto;
+}
+
+.loader-block {
+    width: 1rem;
+    height: 1rem;
+    background-color: #1a1f28;
+}
+
+.loader-block-highlight {
+    background-color: #5fc54f !important;
+}
+
+#loader-text {
+    width: 100%;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    margin-top: 1rem;
+    padding: 1rem;
+}
+
+#loader .text-section {
+    padding: 1.5rem 2rem;
+    margin-top: 2rem;
+    border-radius: 5px;
+    background-color: #1a1f28;
+}
+
+#loader .text-section h2 {
+    margin-top: 0;
+    margin: auto;
+    width: 50%;
+    background-color: #2c3544;
+    padding: 0.5rem;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    box-sizing: border-box;
+}
+
+#loader .text-section .tip-box {
+    width: 100%;
+    text-align: left;
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    background-color: #1a1f28;
+}
+
+@media screen and (max-width: 960px) {
+    #loader {
+        padding-left: 5%;
+        padding-right: 5%;
+    }
+}
+
+/**************************************************
+Controller Config Stying
+**************************************************/
+
+#controller-config {
+    padding: 2rem;
+    margin-top: 3rem;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+#controller-underlay-container {
+    box-sizing: border-box;
+    background-color: #1a1f28;
+    border-radius: 5px;
+    padding: 2rem 10%;
+}
+
+.controller-underlay {
+    width: 100%;
+    display: block;
+    z-index: 2;
+    position: relative;
+}
+
+.controller-display {
+    width: 100%;
+    max-width: 25rem;
+    margin: auto;
+    display: block;
+    position: relative;
+}
+
+.control-indicator {
+    display: block;
+    position: absolute;
+    width: 6%;
+    padding-top: 6%;
+    border-radius: 100%;
+    background-color: #647f96;
+    z-index: 1;
+}
+
+.square-button {
+    border-radius: 0px !important;
+}
+
+.big-button {
+    width: 8% !important;
+    padding-top: 8% !important;
+}
+
+/** Pro Controller Control Indicator Positioning **/
+#pc_ls {
+    left: 19.25%; /* LM: 15.5, RM: 23*/
+    top: 23.75%; /* TM: 18, BM: 29*/ }
+#pc_rs {
+    left: 59.75%; /* LM: 56, RM: 63.5*/
+    top: 44.125%; /* TM: 38.125, BM: 50*/ }
+#pc_du {
+    left: 30.7%;
+    top: 36%; }
+#pc_dl {
+    left: 25.8%;
+    top: 45.2%; }
+#pc_dr {
+    left: 36.8%;
+    top: 44.4%; }
+#pc_dd {
+    left: 31.3%;
+    top: 52.4%; }
+#pc_h {
+    left: 54%;
+    top: 24%; }
+#pc_c {
+    left: 40%;
+    top: 24%; }
+#pc_m {
+    left: 59%;
+    top: 12%; }
+#pc_p {
+    left: 35%;
+    top: 13%; }
+#pc_b {
+    left: 72%;
+    top: 32%; }
+#pc_a {
+    left: 80%;
+    top: 22%; }
+#pc_y {
+    left: 64%;
+    top: 22%; }
+#pc_x {
+    left: 72%;
+    top: 12%; }
+#pc_l {
+    left: 10%;
+    top: 2%; }
+#pc_zl {
+    left: 17%;
+    top: -2%; }
+#pc_r {
+    left: 84%;
+    top: 2%; }
+#pc_zr {
+    left: 77%;
+    top: -2%; }
+
+.controller-config-subsection {
+    padding: 1rem;
+    margin-top: 2%;
+    display: inline-block;
+    min-width: 48.75%;
+    max-width: 48.75%;
+    box-sizing: border-box;
+    vertical-align: top;
+}
+
+.controller-config-subsection h2 {
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
+    font-weight: 500;
+    margin-top: 2rem;
+    font-size: 1.25rem;
+    border-radius: 5px;
+}
+
+.controller-config-subsection h2:first-child {
+    margin-top: 0;
+}
+
+.controller-config-subsection p {
+    text-align: left;
+    padding: 0.25rem;
+}
+
+.controller-config-subsection select {
+    width: 99%;
+    padding: 0.25rem;
+    color: #1a1f28;
+}
+
+.controller-config-subsection:nth-child(even) {
+    margin-right: 1%;
+}
+
+.controller-config-subsection:nth-child(odd) {
+    margin-left: 1%;
+}
+
+.controller-config-subsection table {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+.controller-config-subsection td {
+    border-top: 2px solid #2c3544;
+    border-bottom: 2px solid #2c3544;
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+.controller-config-subsection td:nth-child(1) {
+    text-align: left;
+}
+
+.controller-config-subsection td:nth-child(2) {
+    text-align: right;
+}
+
+.controller-config-subsection button {
+    width: 100%;
+    margin-bottom: 0.25rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#controller-map {
+    padding: 1rem;
+}
+
+.controller-config-subsection button:last-child {
+    margin-bottom: 0;
+}
+
+.controller-config-subsection textarea {
+    width: 98%;
+    margin: auto;
+    min-height: 10rem;
+    color: black;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+@media screen and (max-width: 960px) {
+    #controller-config {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        margin-top: 1rem;
+    }
+
+    .controller-config-subsection {
+        width: 100%;
+        max-width: 100%;
+        margin-top: 4%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .controller-config-subsection:nth-child(even) {
+        margin-right: 0;
+    }
+
+    .controller-config-subsection:nth-child(odd) {
+        margin-left: 0;
+    }
+}
+
+/**************************************************
+Controller Sessions Stying
+**************************************************/
+
+#controller-sessions {
+    display: block;
+    padding: 2rem;
+    max-width: 100%;
+    margin: auto;
+    margin-top: 1rem;
+}
+
+#controller-sessions h1 {
+    margin-top: 0
+}
+
+.controller-session {
+    box-sizing: border-box;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1a1f28;
+    border-radius: 5px;
+}
+
+.controller-session h1 {
+    font-size: 1.3rem;
+    padding: 0;
+    margin: 0;
+    display: inline-block;
+    text-align: left;
+}
+
+.controller-session button {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    display: inline-block;
+}
+
+@media screen and (max-width: 960px) {
+    #controller-sessions {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/**************************************************
+Error Display Stying
+**************************************************/
+
+#error-display {
+    width: 80%;
+    max-width: 960px;
+    display: block;
+    position: fixed;
+    bottom: 0;
+    text-align: left;
+    left: 50%;
+    transform: translateX(-50%);
+    box-sizing: border-box;
+    padding: 1rem;
+}
+
+.error {
+    border-radius: 5px;
+    background-color: #d25647;
+    padding: 1rem 1.5rem;
+    box-sizing: border-box;
+    margin-bottom: 0.5rem;
+    transition: 0.25s;
+}
+
+.error h1 {
+    padding: 0;
+    margin: 0;
+    font-size: 1.1rem;
+    color: #d9dada;
+    text-transform: uppercase;
+    font-weight: bold;
+    display: inline;
+    padding-right: 0.5rem;
+}
+
+.error p {
+    padding: 0;
+    margin: 0;
+    font-size: 1.1rem;
+    display: inline;
+    color: #d9dada;
+}

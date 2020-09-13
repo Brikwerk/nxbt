@@ -1,69 +1,214 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>NXBT: Control Your Switch Locally or Remotely</title>
+        <title>NXBT Webapp</title>
+        <link rel="icon" type="image/png" href="favicon.png"/>
+        <link rel="stylesheet" type="text/css" href="css/main.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
+        <header class="top-bar">
+            <div class="top-bar-wrapper">
+                <div>
+                    <h1>NXBT</h1><div class="mono">v0.1</div>
+                </div>
+                <div id="status-indicator" class="hidden surface-lighter">
+                    <div id="status-indicator-light" class="indicator-yellow"></div>
+                    <span id="status-indicator-text">Loading</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="controller-selection">
+                <h1>Create a Controller</h1>
+                <div class="hidden surface controller-option" onclick="createJoyConL()">
+                    <div class="controller-option-img-wrapper">
+                        <img src="joyconl.svg" draggable="false">
+                    </div>
+                    Joy-Con (L)
+                </div>
+                <div class="surface controller-option" onclick="createProController()">
+                    <div class="controller-option-img-wrapper">
+                        <img src="procon.svg" draggable="false">
+                    </div>
+                    Pro Controller
+                </div>
+                <div class="hidden surface controller-option" onclick="createJoyConR()">
+                    <div class="controller-option-img-wrapper">
+                        <img src="joyconr.svg" draggable="false">
+                    </div>
+                    Joy-Con (R)
+                </div>
+            </section>
+
+            <section id="loader" class="surface hidden">
+                <div id="loader-progress-wrapper" class="surface-lighter">
+                    <div id="loader-blocks">
+                        <div class="loader-block loader-block-highlight"></div>
+                        <div class="loader-block"></div>
+                        <div class="loader-block"></div>
+                        <div class="loader-block"></div>
+                    </div>
+                </div>
+                <div id="loader-text" class="surface-lighter">Loading</div>
+                <div class="text-section">
+                    <h2>Tips</h2>
+                    <h2 class="tip-box">1. First Time Connection</h2>
+                    <p>
+                        If this is your first time connecting to your Nintendo
+                        Switch with NXBT, please ensure that you're on the "Change Grip/Order" menu.
+                        This sub-menu is available from within the Controllers menu, located on the 
+                        bottom row of the Switch's Home Screen.
+                    </p>
+                    <h2 class="tip-box">2. Reconnection</h2>
+                    <p>
+                        If you've previously connected to this Nintendo Switch using NXBT,
+                        please ensure that you're on the Home Screen.
+                    </p>
+                </div>
+            </section>
+
+            <section id="controller-config" class="hidden surface">
+                <div id="controller-underlay-container">
+                    <div class="controller-display hidden">
+                        <div class="control-indicator" id="jl_"></div>
+                        <img id="joyconl-underlay" class="hidden controller-underlay" src="joyconl.svg" draggable="false">
+                    </div>
+                    <div class="controller-display hidden">
+                        <div class="control-indicator" id="jr_"></div>
+                        <img id="joyconr-underlay" class="hidden controller-underlay" src="joyconr.svg" draggable="false">
+                    </div>
+                    <div class="controller-display">
+                        <img id="procon-underlay" class="controller-underlay" src="procon-transparent.svg" draggable="false">
+                        <div class="control-indicator" id="pc_ls"></div>
+                        <div class="control-indicator" id="pc_rs"></div>
+
+                        <div class="control-indicator square-button hidden" id="pc_du"></div>
+                        <div class="control-indicator square-button hidden" id="pc_dl"></div>
+                        <div class="control-indicator square-button hidden" id="pc_dr"></div>
+                        <div class="control-indicator square-button hidden" id="pc_dd"></div>
+
+                        <div class="control-indicator hidden" id="pc_h"></div>
+                        <div class="control-indicator hidden" id="pc_c"></div>
+
+                        <div class="control-indicator hidden" id="pc_m"></div>
+                        <div class="control-indicator hidden" id="pc_p"></div>
+
+                        <div class="control-indicator big-button hidden" id="pc_a"></div>
+                        <div class="control-indicator big-button hidden" id="pc_b"></div>
+                        <div class="control-indicator big-button hidden" id="pc_x"></div>
+                        <div class="control-indicator big-button hidden" id="pc_y"></div>
+
+                        <div class="control-indicator hidden" id="pc_l"></div>
+                        <div class="control-indicator hidden" id="pc_zl"></div>
+                        <div class="control-indicator hidden" id="pc_r"></div>
+                        <div class="control-indicator hidden" id="pc_zr"></div>
+                    </div>
+                </div>
+                <div id="controller-input" class="controller-config-subsection">
+                    <h2 class="surface-lighter">Input Device</h2>
+                    <select id="input-device" name="Select an Input Device" onchange="changeInput(event)">
+                        <option value="keyboard">Keyboard</option>
+                    </select>
+                    <p>
+                        <strong>Supported Input Devices: </strong>
+                        Keyboards, Gamepads
+                        <br><br>
+                        <strong>Note:</strong> You will likely need to press
+                        a button on the gamepad before it shows up on the
+                        input device list.
+                    </p>
+                    <h2 class="surface-lighter">Control Mapping</h2>
+                    <div id="keyboard-map" class="surface-lighter">
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>Left Stick</td>
+                                    <td>W A S D</td>
+                                </tr>
+                                <tr>
+                                    <td>Left Stick Press</td>
+                                    <td>T</td>
+                                </tr>
+                                <tr>
+                                    <td>Right Stick</td>
+                                    <td>Arrow Keys</td>
+                                </tr>
+                                <tr>
+                                    <td>Right Stick Press</td>
+                                    <td>Y</td>
+                                </tr>
+                                <tr>
+                                    <td>Dpad</td>
+                                    <td>G V B N</td>
+                                </tr>
+                                <tr>
+                                    <td>Home & Capture</td>
+                                    <td>[ & ]</td>
+                                </tr>
+                                <tr>
+                                    <td>Plus & Minus</td>
+                                    <td>6 & 7</td>
+                                </tr>
+                                <tr>
+                                    <td>A B X Y</td>
+                                    <td>L K I J</td>
+                                </tr>
+                                <tr>
+                                    <td>L & ZL</td>
+                                    <td>1 & 2</td>
+                                </tr>
+                                <tr>
+                                    <td>R & ZR</td>
+                                    <td>8 & 9</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="controller-map" class="hidden surface-lighter">
+                        <p>
+                            Gamepad controls should match the Nintendo Switch
+                            Pro Controller to some degree in a physical manner.
+                            Please consult the gamepad display above to see
+                            which buttons are actuating.
+                        </p>
+                        <p>
+                            Future plans include enabling key remapping. In the
+                            meantime, I apologize for any inconvience!
+                        </p>
+                    </div>
+                </div>
+                <div id="controller-commands" class="controller-config-subsection">
+                    <h2 class="surface-lighter">Controller Commands</h2>
+                    <button onclick="shutdownController()">Shutdown Controller</button>
+                    <button onclick="recreateProController()">Recreate Controller</button>
+
+                    <h2 class="surface-lighter">Controller Macro</h2>
+                    <p>
+                        <strong>Note:</strong> the main input device will override a running
+                        macro.
+                    </p>
+                    <textarea id="macro-text" class="mono" placeholder="Type Your Macro Here" onfocus="disableKeyHandlers()" onblur="enableKeyHandlers()"></textarea>
+                    <button onclick="sendMacro()">Run Macro</button>
+                </div>
+            </section>
+
+            <section id="controller-sessions" class="hidden surface">
+                <h1>Other Controller Sessions</h1>
+                <div id="controller-session-container"></div>
+            </section>
+
+            <section id="error-display"></section>
+
+            <footer>
+                <p>Source Code and Documentation Available <a href="https://github.com/Brikwerk/nxbt" target="_blank">Here</a></p>
+                <p>Made By <a href="http://github.com/Brikwerk" target="_blank">Reece Walsh</a></p>
+            </footer>
+        </main>
+
         <script src="js/socket.io.js"></script>
-        <script type="text/javascript" charset="utf-8">
-            var socket = io();
-            socket.on('connect', function() {
-                let date = new Date();
-                socket.emit('message', {"timestamp": date.getTime()});
-            });
-
-            socket.on('response', function(data) {
-                console.log(data)
-            });
-
-            socket.on('dateResponse', function(data) {
-                console.log(data)
-            });
-
-            window.addEventListener("gamepadconnected", function(e) {
-                let gp = navigator.getGamepads()[e.gamepad.index];
-                console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
-                    gp.index, gp.id,
-                    gp.buttons.length, gp.axes.length);
-                
-                setInterval(function() {
-                    let gp = navigator.getGamepads()[e.gamepad.index];
-                    
-                    let axes = gp["axes"];
-                    let buttons = []
-                    for (let i = 0; i < gp["buttons"].length; i++) {
-                        let button = gp["buttons"][i];
-                        buttons.push({
-                            "pressed": button["pressed"],
-                        })
-                    }
-                    gpData = {
-                        "axes": gp["axes"],
-                        "buttons": {
-                            "B": gp["buttons"][0]["pressed"],
-                            "A": gp["buttons"][1]["pressed"],
-                            "Y": gp["buttons"][2]["pressed"],
-                            "X": gp["buttons"][3]["pressed"],
-                            "L": gp["buttons"][4]["pressed"],
-                            "R": gp["buttons"][5]["pressed"],
-                            "ZL": gp["buttons"][6]["pressed"],
-                            "ZR": gp["buttons"][7]["pressed"],
-                            "-": gp["buttons"][8]["pressed"],
-                            "+": gp["buttons"][9]["pressed"],
-                            "L_ANALOG": gp["buttons"][10]["pressed"],
-                            "R_ANALOG": gp["buttons"][11]["pressed"],
-                            "DPAD_UP": gp["buttons"][12]["pressed"],
-                            "DPAD_DOWN": gp["buttons"][13]["pressed"],
-                            "DPAD_LEFT": gp["buttons"][14]["pressed"],
-                            "DPAD_RIGHT": gp["buttons"][15]["pressed"],
-                            "HOME": gp["buttons"][16]["pressed"],
-                            "CAPTURE": gp["buttons"][17]["pressed"],
-                        }
-                    }
-
-                    socket.emit('input', JSON.stringify(gpData));
-                }, 1/60);
-            });
-        </script>
+        <script src="js/main.js"></script>
     </body>
 </html>

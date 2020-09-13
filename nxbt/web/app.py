@@ -1,8 +1,10 @@
 import json
 import os
+from threading import RLock
+from time import perf_counter
 
-from ..nxbt import Nxbt
-from flask import Flask, render_template
+from ..nxbt import Nxbt, PRO_CONTROLLER
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 import eventlet
 
@@ -29,6 +31,9 @@ app.config['SECRET_KEY'] = secret_key
 # Starting socket server with Flask app
 sio = SocketIO(app, cookie=False)
 
+user_info_lock = RLock()
+USER_INFO = {}
+
 
 @app.route('/')
 def index():
@@ -37,24 +42,70 @@ def index():
 
 @sio.on('connect')
 def on_connect():
-    print("Connected")
-    index = nxbt.create_controller()
+    with user_info_lock:
+        USER_INFO[request.sid] = {}
+
+
+@sio.on('state')
+def on_state():
+    state_proxy = nxbt.state.copy()
+    state = {}
+    for controller in state_proxy.keys():
+        state[controller] = state_proxy[controller].copy()
+    emit('state', state)
 
 
 @sio.on('disconnect')
 def on_disconnect():
     print("Disconnected")
+    with user_info_lock:
+        try:
+            index = USER_INFO[request.sid]["controller_index"]
+            nxbt.remove_controller(index)
+        except KeyError:
+            pass
 
 
-@sio.on('create_controller')
+@sio.on('shutdown')
+def on_shutdown(index):
+    nxbt.remove_controller(index)
+
+
+@sio.on('create_pro_controller')
 def on_create_controller():
-    pass
+    print("Create Controller")
+
+    try:
+        reconnect_addresses = nxbt.get_switch_addresses()
+        index = nxbt.create_controller(PRO_CONTROLLER, reconnect_address=reconnect_addresses)
+
+        with user_info_lock:
+            USER_INFO[request.sid]["controller_index"] = index
+
+        emit('create_pro_controller', index)
+    except Exception as e:
+        emit('error', str(e))
 
 
 @sio.on('input')
 def handle_input(message):
-    print(json.loads(message))
+    message = json.loads(message)
+    index = message[0]
+    input_packet = message[1]
+    nxbt.set_controller_input(index, input_packet)
+
+
+@sio.on('macro')
+def handle_macro(message):
+    message = json.loads(message)
+    index = message[0]
+    macro = message[1]
+    nxbt.macro(index, macro)
 
 
 def start_web_app():
-    eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
+    eventlet.wsgi.server(eventlet.listen(('127.0.0.1', 8000)), app)
+
+
+if __name__ == "__main__":
+    start_web_app()
