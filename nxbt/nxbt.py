@@ -209,8 +209,11 @@ class Nxbt():
 
         self.resource_manager.shutdown()
 
-        # Re-enable the BlueZ input plugin
-        toggle_input_plugin(True)
+        # Re-enable the BlueZ input plugin, if we have permission
+        try:
+            toggle_input_plugin(True)
+        except PermissionError:
+            pass
 
     def _command_manager(self, task_queue, state):
         """Used as the main multiprocessing Process that is launched
