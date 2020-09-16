@@ -1,6 +1,6 @@
-import setuptools
+from setuptools import setup
 
-setuptools.setup(
+setup(
     name="nxbt",
     install_requires=[
         "dbus-python>=1.2.16",
@@ -9,6 +9,7 @@ setuptools.setup(
         "eventlet>=0.25.2",
         "blessed>=1.17.9",
         "pynput>=1.6.8",
+        "psutil>=5.5.1",
     ],
     extra_require={
         "dev": [
