@@ -76,7 +76,7 @@ sudo nxbt demo
 
 If all is working correctly, the controller should connect, navigate to the settings, test the stick calibration, and navigate back to the "Change Grip/Order Menu".
 
-### Using the Webapp
+## Using the Webapp
 
 The NXBT webapp provides a web interface that allows for quick creation of a Nintendo Switch controller and use of a keyboard or gamepad to control the Nintendo Switch. This lets anyone who can access the website control a Nintendo Switch with their favourite keyboard or gamepad.
 
@@ -113,7 +113,7 @@ A few other functions to note:
 - Once you've connected over the "Change Grip/Order Menu", NXBT will automatically reconnect. This applies on a per-Bluetooth-adapter basis.
 - Most gamepads should be usable over the browser. To get started with a gamepad, click a button and it should show up under the input dropdown list. If it doesn't show up, try another browser. Chrome is the recommended standard as it seems to have the best gamepad support currently (as of September 2020)
 
-### Using the TUI
+## Using the TUI
 
 The TUI (Terminal User Interface) allows for local or remote (SSH/Mosh) terminal sessions to control a Nintendo Switch with a keyboard.
 
@@ -146,7 +146,7 @@ A couple other funcionality notes:
 - In Direct Mode, press Escape to toggle input to the Nintendo Switch.
 - NXBT looks for SSH and Mosh connections before deciding whether or note Remote Mode should be used. If you use another method for creating a remote terminal instance, NXBT likely won't detect it. Please open an issue if this happens to you!
 
-### Running Macros
+## Running Macros
 
 NXBT provides three ways to run macros on your Nintendo Switch:
 
@@ -156,7 +156,9 @@ NXBT provides three ways to run macros on your Nintendo Switch:
 
 For the first method, refer to the "Using the Webapp" section for more info.
 
-#### Running Macros with the Command Line Interface
+For info on writing macros, check out the documentation [here](docs/Macros.md).
+
+### Running Macros with the Command Line Interface
 
 To run a simple, inline macro, you can use the following command:
 
@@ -188,7 +190,7 @@ If you want more information on NXBT's CLI arguments:
 sudo nxbt -h
 ```
 
-#### Running Macros with the Python API
+### Running Macros with the Python API
 
 Macros are supported with the `macro` function in the Python API. All macros are expected as strings (multiline strings are accepted).
 
@@ -228,7 +230,7 @@ while macro_id not in nx.state[controller_index]["finished_macros"]:
 print("Macro has finished")
 ```
 
-### Using the API
+## Using the API
 
 NXBT provides a Python API for use in Python applications or code.
 
