@@ -38,6 +38,10 @@ parser.add_argument('-d', '--debug', required=False, default=False, action='stor
 parser.add_argument('-l', '--logfile', required=False, default=False, action='store_true',
                     help="""Enables logging to a file in the current working directory
                     instead of stderr.""")
+parser.add_argument('-i', '--ip', required=False, default="0.0.0.0", type=str,
+                    help="""Specifies the IP to run the webapp at. Defaults to 0.0.0.0""")
+parser.add_argument('-p', '--port', required=False, default=8000, type=int,
+                    help="""Specifies the port to run the webapp at. Defaults to 8000""")
 args = parser.parse_args()
 
 
@@ -214,7 +218,7 @@ def main():
 
     if args.command == 'webapp':
         from .web import start_web_app
-        start_web_app()
+        start_web_app(ip=args.ip, port=args.port)
     elif args.command == 'demo':
         demo()
     elif args.command == 'macro':

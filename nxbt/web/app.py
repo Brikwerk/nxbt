@@ -1,7 +1,6 @@
 import json
 import os
 from threading import RLock
-from time import perf_counter
 
 from ..nxbt import Nxbt, PRO_CONTROLLER
 from flask import Flask, render_template, request
@@ -103,8 +102,8 @@ def handle_macro(message):
     nxbt.macro(index, macro)
 
 
-def start_web_app():
-    eventlet.wsgi.server(eventlet.listen(('127.0.0.1', 8000)), app)
+def start_web_app(ip='0.0.0.0', port=8000):
+    eventlet.wsgi.server(eventlet.listen((ip, port)), app)
 
 
 if __name__ == "__main__":
