@@ -1,5 +1,6 @@
 import argparse
 from random import randint
+from time import sleep
 import os
 
 from .nxbt import Nxbt, PRO_CONTROLLER
@@ -180,8 +181,16 @@ def macro():
     print("Connected!")
 
     print("Running macro...")
-    nx.macro(index, macro)
-    print("Finished running macro. Exiting...")
+    macro_id = nx.macro(index, macro, block=False)
+    while (True):
+        if nx.state[index]["state"] == "crashed":
+            print("Controller crashed while running macro")
+            print(nx.state[index]["errors"])
+            break
+        if macro_id in nx.state[index]["finished_macros"]:
+            print("Finished running macro. Exiting...")
+            break
+        sleep(1/30)
 
 
 def list_switch_addresses():
