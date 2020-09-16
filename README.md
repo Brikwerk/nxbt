@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img src="docs/img/nxbt-logo.png" alt="NXBT" width="200">
+  <img src="https://raw.githubusercontent.com/Brikwerk/nxbt/master/docs/img/nxbt-logo.png" alt="NXBT" width="200">
   <br>
   NXBT
   <br>
@@ -26,7 +26,7 @@
   <a href="#license">License</a>
 </p>
 
-![screenshot](docs/img/nxbt-example.png)
+![screenshot](https://raw.githubusercontent.com/Brikwerk/nxbt/master/docs/img/nxbt-example.png)
 
 ## Key Features
 
@@ -93,7 +93,7 @@ The webapp itself will be locally accessible at `http://127.0.0.1:8000` or, if y
 You should see a webpage similar to the following image:
 
 <div align="center">
-  <img src="docs/img/nxbt-webapp-start.png" alt="NXBT Webapp Start Screen" width="600">
+  <img src="https://raw.githubusercontent.com/Brikwerk/nxbt/master/docs/img/nxbt-webapp-start.png" alt="NXBT Webapp Start Screen" width="600">
 </div>
 
 To create and start a Pro Controller, click the Pro controller graphic. If creation/boot is successful, the website will switch to a loading screen. During this time, you should have the Nintendo Switch you wish to connect to powered on and within range of the host computer.
@@ -103,7 +103,7 @@ To create and start a Pro Controller, click the Pro controller graphic. If creat
 Once you've successfully connected to the Nintendo Switch, you should see a webpage similar to below:
 
 <div align="center">
-  <img src="docs/img/nxbt-webapp-connected.png" alt="NXBT Webapp Connected Screen" width="600">
+  <img src="https://raw.githubusercontent.com/Brikwerk/nxbt/master/docs/img/nxbt-webapp-connected.png" alt="NXBT Webapp Connected Screen" width="600">
 </div>
 
 Here, you can change your input method, shutdown or restart the controller, and run an NXBT macro.
@@ -128,7 +128,7 @@ sudo nxbt tui
 A loading screen should open and, once connected, the main TUI control screen should load. This should look something like below:
 
 <div align="center">
-  <img src="docs/img/nxbt-tui.png" alt="NXBT TUI Connected" width="600">
+  <img src="https://raw.githubusercontent.com/Brikwerk/nxbt/master/docs/img/nxbt-tui.png" alt="NXBT TUI Connected" width="600">
 </div>
 
 There are two types of NXBT TUI sessions:
