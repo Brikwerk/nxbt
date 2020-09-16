@@ -92,7 +92,7 @@ The webapp itself will be locally accessible at `http://127.0.0.1:8000` or, if y
 
 You should see a webpage similar to the following image:
 
-<div style="text-align:center">
+<div align="center">
   <img src="docs/img/nxbt-webapp-start.png" alt="NXBT Webapp Start Screen" width="600">
 </div>
 
@@ -102,8 +102,8 @@ To create and start a Pro Controller, click the Pro controller graphic. If creat
 
 Once you've successfully connected to the Nintendo Switch, you should see a webpage similar to below:
 
-<div style="text-align:center">
-  <img src="docs/img/nxbt-webapp-connected.png" alt="NXBT Webapp Start Screen" width="600">
+<div align="center">
+  <img src="docs/img/nxbt-webapp-connected.png" alt="NXBT Webapp Connected Screen" width="600">
 </div>
 
 Here, you can change your input method, shutdown or restart the controller, and run an NXBT macro.
@@ -127,8 +127,8 @@ sudo nxbt tui
 
 A loading screen should open and, once connected, the main TUI control screen should load. This should look something like below:
 
-<div style="text-align:center">
-  <img src="docs/img/nxbt-tui.png" alt="NXBT Webapp Start Screen" width="600">
+<div align="center">
+  <img src="docs/img/nxbt-tui.png" alt="NXBT TUI Connected" width="600">
 </div>
 
 There are two types of NXBT TUI sessions:
