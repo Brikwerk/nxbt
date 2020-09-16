@@ -2,6 +2,8 @@ from setuptools import setup
 
 setup(
     name="nxbt",
+    include_package_data=True,
+    long_description_content_type="text/markdown",
     install_requires=[
         "dbus-python>=1.2.16",
         "Flask>=1.1.2",

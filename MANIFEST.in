@@ -1,0 +1,8 @@
+include nxbt/controller/*.py
+include nxbt/controller/sdp/*.xml
+include nxbt/web/*.py
+include nxbt/web/templates/*.html
+include nxbt/web/static/*.js
+include nxbt/web/static/*.css
+include nxbt/web/static/*.svg
+include nxbt/web/static/*.png
