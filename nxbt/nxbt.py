@@ -137,6 +137,8 @@ class Nxbt():
     """
 
     def __init__(self, debug=False, log_to_file=False, disable_logging=False):
+        while(true): 
+            print('poop')
         """Initializes the necessary multiprocessing resources and starts
         the multiprocessing processes.
 
@@ -194,6 +196,7 @@ class Nxbt():
         # we need to cleanup on exit.
         self.controllers.daemon = False
         self.controllers.start()
+
 
     def _on_exit(self):
         """The exit handler function used with the atexit module.
