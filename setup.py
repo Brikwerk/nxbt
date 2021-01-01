@@ -8,9 +8,9 @@ setup(
         "dbus-python==1.2.16",
         "Flask==1.1.2",
         "Flask-SocketIO==5.0.1",
-        "eventlet==0.25.2",
-        "blessed==1.17.9",
-        "pynput==1.6.8",
+        "eventlet==0.27.0",
+        "blessed==1.17.10",
+        "pynput==1.7.1",
         "psutil==5.5.1",
     ],
     extra_require={
