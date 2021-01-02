@@ -11,7 +11,7 @@ setup(
         "eventlet==0.27.0",
         "blessed==1.17.10",
         "pynput==1.7.1",
-        "psutil==5.5.1",
+        "psutil==5.6.6",
     ],
     extra_require={
         "dev": [
