@@ -567,7 +567,7 @@ class InputTUI():
             else:
                 self.controller.render_controller()
             self.check_for_disconnect(term)
-            time.sleep(1/30)
+            time.sleep(1/120)
 
     def render_start_screen(self, term, loading_text):
 

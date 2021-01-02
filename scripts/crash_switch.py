@@ -146,6 +146,7 @@ if __name__ == "__main__":
     bt = BlueZ(adapter_path="/org/bluez/hci0")
 
     controller = Controller(bt, PRO_CONTROLLER)
+    controller.setup()
 
     # Switch sockets
     switch_itr = socket.socket(family=socket.AF_BLUETOOTH,
