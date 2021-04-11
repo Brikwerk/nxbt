@@ -12,7 +12,8 @@ import dbus
 
 from .controller import ControllerServer
 from .controller import ControllerTypes
-from .bluez import find_objects, toggle_input_plugin
+from .bluez import BlueZ, find_objects, toggle_clean_bluez
+from .bluez import replace_mac_addresses
 from .bluez import find_devices_by_alias
 from .bluez import SERVICE_NAME, ADAPTER_INTERFACE
 from .logging import create_logger
@@ -175,12 +176,33 @@ class Nxbt():
         self._adapters_in_use = {}
         self._controller_adapter_lookup = {}
 
+        # Save all MAC addresses for existing adapters and replace
+        # with Controller MAC addresses
+        self.cached_adapters = self.get_available_adapters()
+        self.old_addresses = []
+        self.masked_addresses = []
+        for adapter in self.cached_adapters:
+            bt = BlueZ(adapter_path=adapter)
+
+            # Saving old address
+            self.old_addresses.append(bt.address)
+
+            # Creating/saving a Switch-compliant masked address
+            address = bt.address.split(":")
+            address[0] = "7C"
+            address[1] = "BB"
+            address[2] = "8A"
+            address = ":".join(address)
+            self.masked_addresses.append(address)
+
+            bt.bus.close()
+        # Replace the old MAC addresses with the Switch-compliant
+        # masked ones
+        replace_mac_addresses(self.cached_adapters, self.masked_addresses)
+
         # Disable the BlueZ input plugin so we can use the
         # HID control/interrupt Bluetooth ports
-        try:
-            toggle_input_plugin(False)
-        except PermissionError:
-            pass
+        toggle_clean_bluez(True)
 
         # Exit handler
         atexit.register(self._on_exit)
@@ -209,11 +231,11 @@ class Nxbt():
 
         self.resource_manager.shutdown()
 
-        # Re-enable the BlueZ input plugin, if we have permission
-        try:
-            toggle_input_plugin(True)
-        except PermissionError:
-            pass
+        # Reset Bluetooth MAC addresses
+        replace_mac_addresses(self.cached_adapters, self.old_addresses)
+
+        # Re-enable the BlueZ plugins, if we have permission
+        toggle_clean_bluez(False)
 
     def _command_manager(self, task_queue, state):
         """Used as the main multiprocessing Process that is launched
@@ -641,6 +663,7 @@ class Nxbt():
 
         bus = dbus.SystemBus()
         adapters = find_objects(bus, SERVICE_NAME, ADAPTER_INTERFACE)
+        bus.close()
 
         return adapters
 

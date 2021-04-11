@@ -5,6 +5,7 @@ import time
 import queue
 import logging
 import traceback
+import atexit
 
 from .controller import Controller, ControllerTypes
 from ..bluez import BlueZ
@@ -22,6 +23,8 @@ class ControllerServer():
         self.logger = logging.getLogger('nxbt')
         # Cache logging level to increase performance on checks
         self.logger_level = self.logger.level
+
+        atexit.register(self._on_exit)
 
         if state:
             self.state = state
@@ -165,12 +168,14 @@ class ControllerServer():
                 # or 60Hz for Joy-Cons.
                 # Sleep timers are compensated with the elapsed command
                 # processing time.
+                PRO_CONTROLLER_FREQUENCY = 1/15
+                JOYCON_FREQUENCY = 1/15
                 if self.controller_type == ControllerTypes.PRO_CONTROLLER:
-                    if elapsed_time < 1/120:
-                        time.sleep(1/120 - elapsed_time)
+                    if elapsed_time < PRO_CONTROLLER_FREQUENCY:
+                        time.sleep(PRO_CONTROLLER_FREQUENCY - elapsed_time)
                 else:
-                    if elapsed_time < 1/60:
-                        time.sleep(1/60 - elapsed_time)
+                    if elapsed_time < JOYCON_FREQUENCY:
+                        time.sleep(JOYCON_FREQUENCY - elapsed_time)
 
     def save_connection(self, error, state=None):
 
@@ -263,8 +268,14 @@ class ControllerServer():
 
         self.bt.set_discoverable(True)
 
-        ctrl, ctrl_address = s_ctrl.accept()
+        # WARNING:
+        # A device's class must be set **AFTER** discoverability
+        # is set. If it is set before or in a similar timeframe,
+        # the class will be reset to the default value.
+        self.bt.set_class("0x02508")
+
         itr, itr_address = s_itr.accept()
+        ctrl, ctrl_address = s_ctrl.accept()
 
         # Send an empty input report to the Switch to prompt a reply
         self.protocol.process_commands(None)
@@ -277,6 +288,7 @@ class ControllerServer():
         fcntl.fcntl(itr, fcntl.F_SETFL, os.O_NONBLOCK)
 
         # Mainloop
+        received_first_message = False
         while True:
             # Attempt to get output from Switch
             try:
@@ -285,6 +297,9 @@ class ControllerServer():
                     self.logger.debug(format_msg_switch(reply))
             except BlockingIOError:
                 reply = None
+
+            if reply:
+                received_first_message = True
 
             self.protocol.process_commands(reply)
             msg = self.protocol.get_report()
@@ -305,7 +320,10 @@ class ControllerServer():
 
             # Switch responds to packets slower during pairing
             # Pairing cycle responds optimally on a 15Hz loop
-            time.sleep(1/15)
+            if not received_first_message:
+                time.sleep(1)
+            else:
+                time.sleep(1/15)
 
         self.slow_input_frequency = True
         self.input.exited_grip_order_menu = False
@@ -377,3 +395,6 @@ class ControllerServer():
         fcntl.fcntl(itr, fcntl.F_SETFL, os.O_NONBLOCK)
 
         return itr, ctrl
+
+    def _on_exit(self):
+        self.bt.reset_address()
