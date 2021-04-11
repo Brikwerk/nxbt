@@ -105,7 +105,7 @@ def toggle_clean_bluez(toggle):
     :type toggle: boolean
     :raises PermissionError: If the user is not root
     :raises Exception: If the units can't be reloaded
-    :raises Exception: If sdptool, hciconfig, or bdaddr are not available.
+    :raises Exception: If sdptool, hciconfig, or hcitool are not available.
     """
 
     service_path = "/lib/systemd/system/bluetooth.service"
@@ -243,8 +243,8 @@ def replace_mac_addresses(adapter_paths, addresses):
     defaults to False
     :type addresses: bool, optional
     """
-    if which("bdaddr") is None:
-        raise Exception("bdaddr is not available on this system." +
+    if which("hcitool") is None:
+        raise Exception("hcitool is not available on this system." +
                         "If you can, please install this tool, as " +
                         "it is required for proper functionality.")
     if which("hciconfig") is None:
@@ -257,8 +257,11 @@ def replace_mac_addresses(adapter_paths, addresses):
 
     for i in range(len(adapter_paths)):
         adapter_id = adapter_paths[i].split('/')[-1]
-        mac = addresses[i]
-        _run_command(['bdaddr', '-i', adapter_id, mac])
+        mac = addresses[i].split(':')
+        cmds = ['hcitool', '-i', adapter_id, 'cmd', '0x3f', '0x001',
+                f'0x{mac[5]}',f'0x{mac[4]}',f'0x{mac[3]}',f'0x{mac[2]}',
+                f'0x{mac[1]}',f'0x{mac[0]}']
+        _run_command(cmds)
         _run_command(['hciconfig', adapter_id, 'reset'])
 
 
@@ -356,21 +359,29 @@ class BlueZ():
 
         return self.device.Get(ADAPTER_INTERFACE, "Address").upper()
 
-    def set_address(self, address):
+    def set_address(self, mac):
         """Sets the Bluetooth MAC address of the Bluetooth adapter.
         The hciconfig CLI is required for setting the address.
+        For changes to apply, the Bluetooth interface needs to be
+        restarted.
 
-        :param address: A Bluetooth MAC address in 
+        :param mac: A Bluetooth MAC address in 
         the form of "XX:XX:XX:XX:XX:XX
-        :type address: str
+        :type mac: str
         :raises PermissionError: On run as non-root user
         :raises Exception: On CLI errors
         """
-        if which("bdaddr") is None:
-            raise Exception("bdaddr is not available on this system." +
+        if which("hcitool") is None:
+            raise Exception("hcitool is not available on this system." +
                             "If you can, please install this tool, as " +
                             "it is required for proper functionality.")
-        _run_command(['bdaddr', '-i', self.device_id, address])
+        # Reverse MAC (element position-wise) for use with hcitool
+        mac = mac.split(":")
+        cmds = ['hcitool', '-i', self.device_id, 'cmd', '0x3f', '0x001',
+                f'0x{mac[5]}',f'0x{mac[4]}',f'0x{mac[3]}',f'0x{mac[2]}',
+                f'0x{mac[1]}',f'0x{mac[0]}']
+        _run_command(cmds)
+        _run_command(['hciconfig', self.device_id, 'reset'])
 
     def set_class(self, device_class):
         if which("hciconfig") is None:
