@@ -11,7 +11,7 @@ import sys
 import os
 import time
 
-from nxbt import toggle_input_plugin
+from nxbt import toggle_clean_bluez
 from nxbt import BlueZ
 
 REQUEST_INFO = b'\xA2\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     jc_itr = socket.socket(family=socket.AF_BLUETOOTH,
                            type=socket.SOCK_SEQPACKET,
                            proto=socket.BTPROTO_L2CAP)
-    toggle_input_plugin(False)
+    toggle_clean_bluez(True)
     bt = BlueZ(adapter_path="/org/bluez/hci0")
 
     try:
@@ -194,4 +194,4 @@ if __name__ == "__main__":
         raise e
 
     finally:
-        toggle_input_plugin(True)
+        toggle_clean_bluez(False)

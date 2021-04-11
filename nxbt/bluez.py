@@ -3,6 +3,8 @@ import re
 import os
 import time
 import logging
+from shutil import which
+import random
 
 import dbus
 
@@ -90,17 +92,20 @@ def find_objects(bus, service_name, interface_name):
     return paths
 
 
-def toggle_input_plugin(toggle):
-    """Enables or disables the BlueZ input plugin. Requires
-    root user to be run. The units and Bluetooth service will
-    not be restarted if the input plugin already matches
-    the toggle.
+def toggle_clean_bluez(toggle):
+    """Enables or disables all BlueZ plugins,
+    BlueZ compatibility mode, and removes all extraneous
+    SDP Services offered.
+    Requires root user to be run. The units and Bluetooth
+    service will not be restarted if the input plugin
+    already matches the toggle.
 
-    :param toggle: A boolean element indicating if the plugin
-    is enabled (True) or disabled (False)
+    :param toggle: A boolean element indicating if BlueZ 
+    should be cleaned (True) or not (False)
     :type toggle: boolean
     :raises PermissionError: If the user is not root
     :raises Exception: If the units can't be reloaded
+    :raises Exception: If sdptool, hciconfig, or bdaddr are not available.
     """
 
     service_path = "/lib/systemd/system/bluetooth.service"
@@ -114,42 +119,147 @@ def toggle_input_plugin(toggle):
         line = lines[i]
         if line.startswith("ExecStart="):
             # If we want to ensure the plugin is enabled
-            if toggle:
+            if not toggle:
                 # If input is already enabled
-                if "--noplugin=input" not in line:
+                if "--compat --noplugin=*" not in line:
                     return
-                lines[i] = re.sub(" --noplugin=input", "", line)
+                lines[i] = re.sub(" --compat --noplugin=\*", "", line)
             else:
                 # If input is already disabled
-                if "--noplugin=input" in line:
+                if "--compat --noplugin=*" in line:
                     return
                 # If not, add the flag
-                lines[i] = line + " --noplugin=input"
+                lines[i] = line + " --compat --noplugin=*"
 
     service = "\n".join(lines)
     with open(service_path, "w") as f:
         f.write(service)
 
     # Reload units
+    _run_command(["systemctl", "daemon-reload"])
+
+    # Reload the bluetooth service with input disabled
+    _run_command(["systemctl", "restart", "bluetooth"])
+
+    # Kill a bit of time here to ensure all services have restarted
+    time.sleep(0.5)
+
+    # Only clean out SDP records if we're toggling ON
+    if toggle:
+        clean_sdp_records()
+
+def clean_sdp_records():
+    """Cleans all SDP Records from BlueZ with sdptool
+
+    :raises Exception: On CLI error or sdptool missing
+    """
+    # TODO: sdptool is deprecated in BlueZ 5. This should ideally
+    # use the DBus API, however, bugs seemingly exist with the
+    # UnregisterProfile interface.
+
+    # Check if sdptool is available for use
+    if which("sdptool") is None:
+        raise Exception("sdptool is not available on this system." +
+                        "If you can, please install this tool, as " +
+                        "it is required for proper functionality.")
+
+    # Enable Read/Write to the SDP server. This is a remedy for a 
+    # compatibility mode bug introduced in later versions of BlueZ 5
+    _run_command(["chmod", "777", "/var/run/sdp"])
+
+    # Identify/List all SDP services available with sdptool
+    result = _run_command(['sdptool', 'browse', 'local']).stdout.decode('utf-8')
+    if result is None or len(result.split('\n\n')) < 1:
+        return
+    
+    # Record all service record handles
+    exceptions = ["PnP Information"]
+    service_rec_handles = []
+    for rec in result.split('\n\n'):
+        # Skip if exception is in record
+        exception_found = False
+        for exception in exceptions:
+            if exception in rec:
+                exception_found = True
+                break
+        if exception_found:
+            continue
+
+        # Read lines and add Record Handles to the list
+        for line in rec.split('\n'):
+            if "Service RecHandle" in line:
+                service_rec_handles.append(line.split(" ")[2])
+    
+    # Delete all found service records
+    if len(service_rec_handles) > 0:
+        for record_handle in service_rec_handles:
+            _run_command(['sdptool', 'del', record_handle])
+
+
+def _run_command(command):
+    """Runs a specified command on the shell of the system.
+    If the command is run unsuccessfully, an error is raised.
+    The command must be in the form of an array with each term
+    individually listed. Eg: ["which", "bash"]
+
+    :param command: A list of command terms
+    :type command: list
+    :raises Exception: On command failure or error
+    """
     result = subprocess.run(
-        ["systemctl", "daemon-reload"],
+        command,
+        stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
 
     cmd_err = result.stderr.decode("utf-8").replace("\n", "")
     if cmd_err != "":
         raise Exception(cmd_err)
+    
+    return result
 
-    # Reload the bluetooth service with input disabled
-    result = subprocess.run(
-            ["systemctl", "restart", "bluetooth"],
-            stderr=subprocess.PIPE)
 
-    cmd_err = result.stderr.decode("utf-8").replace("\n", "")
-    if cmd_err != "":
-        raise Exception(cmd_err)
+def get_random_controller_mac():
+    """Generates a random Switch-compliant MAC address
+    """
+    def seg():
+        random_number = random.randint(0,255)
+        hex_number = str(hex(random_number))
+        hex_number = hex_number[2:].upper()
+        return str(hex_number)
+    
+    return f"7C:BB:8A:{seg()}:{seg()}:{seg()}"
 
-    # Kill a bit of time here to ensure all services have restarted
-    time.sleep(0.5)
+
+def replace_mac_addresses(adapter_paths, addresses):
+    """Replaces a list of adapter's Bluetooth MAC addresses
+    with Switch-compliant Controller MAC addresses. If the
+    addresses argument is specified, the adapter path's
+    MAC addresses will be reset to respective (index-wise)
+    address in the list.
+
+    :param adapter_paths: A list of Bluetooth adapter paths
+    :type adapter_paths: list
+    :param addresses: A list of Bluetooth MAC addresses,
+    defaults to False
+    :type addresses: bool, optional
+    """
+    if which("bdaddr") is None:
+        raise Exception("bdaddr is not available on this system." +
+                        "If you can, please install this tool, as " +
+                        "it is required for proper functionality.")
+    if which("hciconfig") is None:
+        raise Exception("hciconfig is not available on this system." +
+                        "If you can, please install this tool, as " +
+                        "it is required for proper functionality.")
+
+    if addresses:
+        assert len(addresses) == len(adapter_paths)
+
+    for i in range(len(adapter_paths)):
+        adapter_id = adapter_paths[i].split('/')[-1]
+        mac = addresses[i]
+        _run_command(['bdaddr', '-i', adapter_id, mac])
+        _run_command(['hciconfig', adapter_id, 'reset'])
 
 
 def find_devices_by_alias(alias):
@@ -245,6 +355,36 @@ class BlueZ():
         """
 
         return self.device.Get(ADAPTER_INTERFACE, "Address").upper()
+
+    def set_address(self, address):
+        """Sets the Bluetooth MAC address of the Bluetooth adapter.
+        The hciconfig CLI is required for setting the address.
+
+        :param address: A Bluetooth MAC address in 
+        the form of "XX:XX:XX:XX:XX:XX
+        :type address: str
+        :raises PermissionError: On run as non-root user
+        :raises Exception: On CLI errors
+        """
+        if which("bdaddr") is None:
+            raise Exception("bdaddr is not available on this system." +
+                            "If you can, please install this tool, as " +
+                            "it is required for proper functionality.")
+        _run_command(['bdaddr', '-i', self.device_id, address])
+
+    def set_class(self, device_class):
+        if which("hciconfig") is None:
+            raise Exception("hciconfig is not available on this system." +
+                            "If you can, please install this tool, as " +
+                            "it is required for proper functionality.")
+        _run_command(['hciconfig', self.device_id, 'class', device_class])
+
+    def reset_adapter(self):
+        if which("hciconfig") is None:
+            raise Exception("hciconfig is not available on this system." +
+                            "If you can, please install this tool, as " +
+                            "it is required for proper functionality.")
+        _run_command(['hciconfig', self.device_id, 'reset'])
 
     @property
     def name(self):
@@ -470,7 +610,16 @@ class BlueZ():
         :type opts: dict
         """
 
-        self.profile_manager.RegisterProfile(profile_path, uuid, opts)
+        return self.profile_manager.RegisterProfile(profile_path, uuid, opts)
+
+    def unregister_profile(self, profile):
+        """Unregisters a given SDP record from the BlueZ SDP server.
+
+        :param profile: A SDP record profile object
+        :type profile: Profile
+        """
+
+        self.profile_manager.UnregisterProfile(profile)
 
     def reset(self):
         """Restarts the Bluetooth Service
