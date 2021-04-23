@@ -144,9 +144,6 @@ def toggle_clean_bluez(toggle):
     # Kill a bit of time here to ensure all services have restarted
     time.sleep(0.5)
 
-    # Only clean out SDP records if we're toggling ON
-    if toggle:
-        clean_sdp_records()
 
 def clean_sdp_records():
     """Cleans all SDP Records from BlueZ with sdptool
@@ -723,6 +720,8 @@ class BlueZ():
         devices = self.get_discovered_devices()
 
         # Start discovering new devices and loop
+        self.set_powered(True)
+        self.set_pairable(True)
         self.adapter.StartDiscovery()
         try:
             for i in range(0, timeout):
@@ -737,6 +736,7 @@ class BlueZ():
                     callback(devices)
         finally:
             self.adapter.StopDiscovery()
+            time.sleep(1)
 
         # Filter out paired devices or devices that don't
         # match a specified alias.
