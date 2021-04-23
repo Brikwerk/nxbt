@@ -176,30 +176,6 @@ class Nxbt():
         self._adapters_in_use = {}
         self._controller_adapter_lookup = {}
 
-        # Save all MAC addresses for existing adapters and replace
-        # with Controller MAC addresses
-        self.cached_adapters = self.get_available_adapters()
-        self.old_addresses = []
-        self.masked_addresses = []
-        for adapter in self.cached_adapters:
-            bt = BlueZ(adapter_path=adapter)
-
-            # Saving old address
-            self.old_addresses.append(bt.address)
-
-            # Creating/saving a Switch-compliant masked address
-            address = bt.address.split(":")
-            address[0] = "7C"
-            address[1] = "BB"
-            address[2] = "8A"
-            address = ":".join(address)
-            self.masked_addresses.append(address)
-
-            bt.bus.close()
-        # Replace the old MAC addresses with the Switch-compliant
-        # masked ones
-        replace_mac_addresses(self.cached_adapters, self.masked_addresses)
-
         # Disable the BlueZ input plugin so we can use the
         # HID control/interrupt Bluetooth ports
         toggle_clean_bluez(True)
@@ -230,9 +206,6 @@ class Nxbt():
             self.controllers.terminate()
 
         self.resource_manager.shutdown()
-
-        # Reset Bluetooth MAC addresses
-        replace_mac_addresses(self.cached_adapters, self.old_addresses)
 
         # Re-enable the BlueZ plugins, if we have permission
         toggle_clean_bluez(False)
