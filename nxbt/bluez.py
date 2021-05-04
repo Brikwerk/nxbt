@@ -5,6 +5,7 @@ import time
 import logging
 from shutil import which
 import random
+from pathlib import Path
 
 import dbus
 
@@ -109,31 +110,33 @@ def toggle_clean_bluez(toggle):
     """
 
     service_path = "/lib/systemd/system/bluetooth.service"
-    service = None
-    with open(service_path, "r") as f:
-        service = f.read()
+    override_dir = Path("/run/systemd/system/bluetooth.service.d")
+    override_path = override_dir / "nxbt.conf"
 
-    # Find the bluetooth service execution line
-    lines = service.split("\n")
-    for i in range(0, len(lines)):
-        line = lines[i]
-        if line.startswith("ExecStart="):
-            # If we want to ensure the plugin is enabled
-            if not toggle:
-                # If input is already enabled
-                if "--compat --noplugin=*" not in line:
-                    return
-                lines[i] = re.sub(" --compat --noplugin=\*", "", line)
+    if toggle:
+        if override_path.is_file():
+            # Override exist, no need to restart bluetooth
+            return
+
+        with open(service_path) as f:
+            for line in f:
+                if line.startswith("ExecStart="):
+                    exec_start = line.strip() + " --compat --noplugin=*"
+                    break
             else:
-                # If input is already disabled
-                if "--compat --noplugin=*" in line:
-                    return
-                # If not, add the flag
-                lines[i] = line + " --compat --noplugin=*"
+                raise Exception("systemd service file doesn't have a ExecStart line")
 
-    service = "\n".join(lines)
-    with open(service_path, "w") as f:
-        f.write(service)
+        override = f"[Service]\nExecStart=\n{exec_start}"
+
+        override_dir.mkdir(parents=True, exist_ok=True)
+        with override_path.open("w") as f:
+            f.write(override)
+    else:
+        try:
+            os.remove(override_path)
+        except FileNotFoundError:
+            # Override doesn't exist, no need to restart bluetooth
+            return
 
     # Reload units
     _run_command(["systemctl", "daemon-reload"])

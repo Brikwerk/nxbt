@@ -323,11 +323,6 @@ if __name__ == "__main__":
         with open("messages.txt", "w") as f:
             f.write("\n".join(message_buffer))
 
-        try:
-            sys.exit(1)
-        except SystemExit:
-            os._exit(1)
-
     except OSError as e:
         print("Closing sockets")
 
