@@ -8,7 +8,7 @@ setup(
         "dbus-python==1.2.16",
         "Flask==1.1.2",
         "Flask-SocketIO==5.0.1",
-        "eventlet==0.27.0",
+        "eventlet==0.31.0",
         "blessed==1.17.10",
         "pynput==1.7.1",
         "psutil==5.6.6",
