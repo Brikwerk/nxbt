@@ -10,7 +10,7 @@ from .tui import InputTUI
 
 parser = argparse.ArgumentParser()
 parser.add_argument('command', default=False, choices=[
-                        'webapp', 'demo', 'macro', 'tui', 'addresses'
+                        'webapp', 'demo', 'macro', 'tui', 'remote_tui', 'addresses'
                     ],
                     help="""Specifies the nxbt command to run:
                     webapp - Runs web server and allows for controller/macro
@@ -19,8 +19,9 @@ parser.add_argument('command', default=False, choices=[
                     is on the main menu's Change Grip/Order menu before running).
                     macro - Allows for input of a specified macro from the command line
                     (with the argument -s) or from a file (with the argument -f).
-                    input - Opens a TUI that allows for direct input from the keyboard
-                    to the Switch. addresses - Lists the Bluetooth MAC addresses for
+                    tui/remote_tui - Opens a TUI that allows for direct input from the keyboard
+                    to the Switch. 
+                    addresses - Lists the Bluetooth MAC addresses for
                     all previously connected Nintendo Switches""")
 parser.add_argument('-c', '--commands', required=False, default=False,
                     help="""Used in conjunction with the macro command. Specifies a
@@ -47,21 +48,23 @@ args = parser.parse_args()
 
 MACRO = """
 B 0.1s
-0.1s
+0.5s
 B 0.1s
-0.1s
+0.5s
 B 0.1s
-0.1s
+0.5s
 B 0.1s
 1.5s
 DPAD_RIGHT 0.075s
 0.075s
 A 0.1s
 1.5s
-DPAD_DOWN 1.0s
+LOOP 12
+    DPAD_DOWN 0.075s
+    0.075s
 A 0.1s
 0.25s
-DPAD_DOWN 0.95s
+DPAD_DOWN 0.93s
 A 0.1s
 0.25s
 L_STICK_PRESS 0.1s
@@ -148,8 +151,16 @@ def demo():
         controller_idxs.append(index)
 
     # Run a macro on the last controller
-    # and don't wait for the macro to complete
-    nx.macro(controller_idxs[-1], MACRO)
+    print("Running Demo...")
+    macro_id = nx.macro(controller_idxs[-1], MACRO, block=False)
+    while macro_id not in nx.state[controller_idxs[-1]]["finished_macros"]:
+        state = nx.state[controller_idxs[-1]]
+        if state['state'] == 'crashed':
+            print("An error occurred while running the demo:")
+            print(state['errors'])
+            exit(1)
+        sleep(1.0)
+    print("Finished!")
 
 
 def macro():
@@ -226,6 +237,10 @@ def main():
     elif args.command == 'tui':
         reconnect_target = get_reconnect_target()
         tui = InputTUI(reconnect_target=reconnect_target)
+        tui.start()
+    elif args.command == 'remote_tui':
+        reconnect_target = get_reconnect_target()
+        tui = InputTUI(reconnect_target=reconnect_target, force_remote=True)
         tui.start()
     elif args.command == 'addresses':
         list_switch_addresses()
