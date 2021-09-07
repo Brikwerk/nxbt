@@ -7,6 +7,8 @@ import logging
 import traceback
 import atexit
 
+import numpy as np
+
 from .controller import Controller, ControllerTypes
 from ..bluez import BlueZ
 from .protocol import ControllerProtocol
@@ -59,7 +61,12 @@ class ControllerServer():
 
         self.input = InputParser(self.protocol)
 
-        self.slow_input_frequency = False
+        # Debug timekeeping storage array
+        self.times = []
+
+        # Initial reconnection overload protection
+        self.tick = 1
+        self.cached_msg = ''
 
     def run(self, reconnect_address=None):
         """Runs the mainloop of the controller server.
@@ -103,15 +110,14 @@ class ControllerServer():
 
     def mainloop(self, itr, ctrl):
 
-        # Mainloop
         while True:
-            # Start timing the command processing
+            # Start timing command processing
             timer_start = time.perf_counter()
 
             # Attempt to get output from Switch
             try:
                 reply = itr.recv(50)
-                if self.logger_level <= logging.DEBUG and len(reply) > 40:
+                if len(reply) > 40:
                     self.logger.debug(format_msg_switch(reply))
             except BlockingIOError:
                 reply = None
@@ -145,7 +151,17 @@ class ControllerServer():
                 self.logger.debug(format_msg_controller(msg))
 
             try:
-                itr.sendall(msg)
+                # Cache the last packet to prevent overloading the switch
+                # with packets on the "Change Grip/Order" menu.
+                if msg[3:] != self.cached_msg:
+                    itr.sendall(msg)
+                    self.cached_msg = msg[3:]
+                # Send a blank packet every so often to keep the Switch
+                # from disconnecting from the controller.
+                elif self.tick == 660:
+                    itr.sendall(msg)
+                    self.tick = 0
+                    # print(msg, "tick")
             except BlockingIOError:
                 continue
             except OSError as e:
@@ -154,28 +170,21 @@ class ControllerServer():
 
             # Figure out how long it took to process commands
             timer_end = time.perf_counter()
-            elapsed_time = (timer_end - timer_start)
+            elapsed_time = timer_end - timer_start
+            
+            sleep_time = 1/66 - elapsed_time
+            if sleep_time >= 0:
+                time.sleep(sleep_time)
+            self.tick += 1
 
-            if self.slow_input_frequency:
-                # Check if we can switch out of slow frequency input
-                if self.input.exited_grip_order_menu:
-                    self.slow_input_frequency = False
+            if self.logger_level <= logging.DEBUG:
+                self.times.append(elapsed_time)
+                if len(self.times) > 100:
+                    self.times.pop()
+                mean_time = np.mean(self.times)
 
-                if elapsed_time < 1/15:
-                    time.sleep(1/15 - elapsed_time)
-            else:
-                # Respond at 120Hz for Pro Controller
-                # or 60Hz for Joy-Cons.
-                # Sleep timers are compensated with the elapsed command
-                # processing time.
-                PRO_CONTROLLER_FREQUENCY = 1/15
-                JOYCON_FREQUENCY = 1/15
-                if self.controller_type == ControllerTypes.PRO_CONTROLLER:
-                    if elapsed_time < PRO_CONTROLLER_FREQUENCY:
-                        time.sleep(PRO_CONTROLLER_FREQUENCY - elapsed_time)
-                else:
-                    if elapsed_time < JOYCON_FREQUENCY:
-                        time.sleep(JOYCON_FREQUENCY - elapsed_time)
+                self.logger.debug(self.tick, 1/mean_time)
+
 
     def save_connection(self, error, state=None):
 
@@ -198,13 +207,16 @@ class ControllerServer():
                         self.lock.release()
             except OSError:
                 self.reconnect_counter += 1
-                self.logger.exception(error)
+                self.logger.debug(error)
                 time.sleep(0.5)
 
         # If we can't reconnect, transition to attempting
         # to connect to any Switch.
         self.logger.debug("Connecting to any Switch")
         self.reconnect_counter = 0
+
+        # Reinitialize initial communication overload protections
+        self.tick = 1
 
         # Reinitialize the protocol
         self.protocol = ControllerProtocol(
@@ -325,7 +337,6 @@ class ControllerServer():
             else:
                 time.sleep(1/15)
 
-        self.slow_input_frequency = True
         self.input.exited_grip_order_menu = False
 
         return itr, ctrl
