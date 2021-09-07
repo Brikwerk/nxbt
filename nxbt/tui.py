@@ -264,12 +264,27 @@ class InputTUI():
         "9": "ZR",
     }
 
-    def __init__(self, reconnect_target=None, debug=False, logfile=False):
+    def __init__(self, reconnect_target=None, debug=False, logfile=False, force_remote=False):
 
         self.reconnect_target = reconnect_target
         self.term = Terminal()
-        self.remote_connection = self.detect_remote_connection()
+        if force_remote:
+            self.remote_connection = True
+        else:
+            self.remote_connection = self.detect_remote_connection()
         self.controller = ControllerTUI(self.term)
+
+        # Check if direct connection will fail
+        if not self.remote_connection:
+            try:
+                from pynput import keyboard
+            except ImportError as e:
+                print("Unable to import pynput for direct input.")
+                print("If you're accessing NXBT over a remote shell, ", end="")
+                print("please use the 'remote_tui' option instead of 'tui'.")
+                print("The original pynput import is displayed below:\n")
+                print(e)
+                exit(1)
 
         self.debug = debug
         self.logfile = logfile
@@ -391,7 +406,7 @@ class InputTUI():
             if len(term._keyboard_buf) > 1:
                 term._keyboard_buf = deque([term._keyboard_buf.pop()])
 
-            inp = term.inkey(1/60)
+            inp = term.inkey(1/66)
 
             pressed_key = None
             if inp.is_sequence:
@@ -426,9 +441,6 @@ class InputTUI():
             self.check_for_disconnect(term)
 
     def direct_input_loop(self, term):
-
-        # pynput must be imported here since earlier imports
-        # will cause errors on remote connections
         from pynput import keyboard
 
         self.controller.toggle_auto_keypress_deactivation(False)
@@ -609,6 +621,12 @@ class InputTUI():
             print(term.bold_black_on_red(term.center("")))
             print(term.bold_black_on_red(term.center(state.title())))
             print(term.bold_black_on_red(term.center("")))
+
+            if state == 'crashed':
+                time.sleep(3)
+                term.clear()
+                errors = self.nx.state[self.controller_index]["errors"]
+                raise ConnectionError(errors)
 
             while True:
                 inp = term.inkey(1/30)
