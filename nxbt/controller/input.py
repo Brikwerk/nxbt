@@ -150,6 +150,29 @@ class InputParser():
     def set_controller_input(self, controller_input):
 
         self.controller_input = controller_input
+    
+    def commands_queued(self):
+        check = dumps(self.controller_input) != dumps(DIRECT_INPUT_IDLE_PACKET)
+        check = check or self.macro_buffer
+        check = check or self.current_macro
+        check = check or self.current_macro_commands
+        return check
+
+    def active_input_queued(self):
+        """Checks if an active command input is queued. An active command
+        is a depressed button or tilted stick.
+
+        :return: True (on an active button) or False (no active buttons)
+        :rtype: bool
+        """
+        if (self.current_macro_commands is not None or 
+                dumps(self.controller_input) != dumps(DIRECT_INPUT_IDLE_PACKET)):
+            if len(self.current_macro_commands) < 2:
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def set_protocol_input(self, state=None):
 
