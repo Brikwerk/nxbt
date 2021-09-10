@@ -6,11 +6,11 @@ import queue
 import logging
 import traceback
 import atexit
-
-import numpy as np
+from threading import Thread
+import statistics as stat
 
 from .controller import Controller, ControllerTypes
-from ..bluez import BlueZ
+from ..bluez import BlueZ, find_devices_by_alias
 from .protocol import ControllerProtocol
 from .input import InputParser
 from .utils import format_msg_controller, format_msg_switch
@@ -104,9 +104,13 @@ class ControllerServer():
         except KeyboardInterrupt:
             pass
         except Exception:
-            self.state["state"] = "crashed"
-            self.state["errors"] = traceback.format_exc()
-            return self.state
+            try:
+                self.state["state"] = "crashed"
+                self.state["errors"] = traceback.format_exc()
+                return self.state
+            except Exception as e:
+                self.logger.debug("Error during graceful shutdown:")
+                self.logger.debug(traceback.format_exc())
 
     def mainloop(self, itr, ctrl):
 
@@ -181,9 +185,10 @@ class ControllerServer():
                 self.times.append(elapsed_time)
                 if len(self.times) > 100:
                     self.times.pop()
-                mean_time = np.mean(self.times)
+                mean_time = stat.mean(self.times)
 
-                self.logger.debug(self.tick, 1/mean_time)
+                self.logger.debug(
+                    f"Tick: {self.tick}, Mean Time: {str(1/mean_time)}")
 
 
     def save_connection(self, error, state=None):
@@ -250,6 +255,39 @@ class ControllerServer():
 
         return itr, ctrl
 
+    def connection_reset_watchdog(self):
+        connected_devices = []
+        connected_devices_count = {}
+        while self._crw_running:
+            paths = self.bt.find_connected_devices(alias_filter="Nintendo Switch")
+            # Keep track of Switches that connect
+            if len(paths) > 0:
+                connected_devices = list(set(connected_devices + paths))
+            
+            # Increment a counter if a Switch connected and disconnected
+            disconnected = list(set(connected_devices) - set(paths))
+            if len(disconnected) > 0:
+                for path in disconnected:
+                    if path not in connected_devices_count.keys():
+                        connected_devices_count[path] = 1
+                    else:
+                        connected_devices_count[path] += 1
+                connected_devices = list(set(connected_devices) - set(disconnected))
+            
+            # Delete Switches that connect/disconnect twice.
+            # This behaviour is characteristic of connection issues and is corrected
+            # by removing the Switch's connection to the system.
+            if len(connected_devices_count.keys()) > 0:
+                for key in connected_devices_count.keys():
+                    if connected_devices_count[key] >= 2:
+                        self.logger.debug(
+                            "A Nintendo Switch disconnected. Resetting Connection...")
+                        self.logger.debug(f"Removing {str(key)}")
+                        self.bt.remove_device(key)
+                        connected_devices_count[key] = 0
+
+            time.sleep(0.25)
+
     def connect(self):
         """Configures as a specified controller, pairs with a Nintendo Switch,
         and creates/accepts sockets for communication with the Switch.
@@ -286,8 +324,14 @@ class ControllerServer():
         # the class will be reset to the default value.
         self.bt.set_class("0x02508")
 
+        self._crw_running = True
+        crw = Thread(target = self.connection_reset_watchdog)
+        crw.start()
+
         itr, itr_address = s_itr.accept()
         ctrl, ctrl_address = s_ctrl.accept()
+
+        self._crw_running = False
 
         # Send an empty input report to the Switch to prompt a reply
         self.protocol.process_commands(None)
