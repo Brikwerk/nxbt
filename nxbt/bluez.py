@@ -265,7 +265,7 @@ def replace_mac_addresses(adapter_paths, addresses):
         _run_command(['hciconfig', adapter_id, 'reset'])
 
 
-def find_devices_by_alias(alias):
+def find_devices_by_alias(alias, return_path=False, created_bus=None):
     """Finds the Bluetooth addresses of devices
     that have a specified Bluetooth alias. Aliases
     are converted to uppercase before comparison
@@ -277,7 +277,10 @@ def find_devices_by_alias(alias):
     :rtype: string or None
     """
 
-    bus = dbus.SystemBus()
+    if created_bus is not None:
+        bus = created_bus
+    else:
+        bus = dbus.SystemBus()
     # Find all connected/paired/discovered devices
     devices = find_objects(
         bus,
@@ -285,6 +288,7 @@ def find_devices_by_alias(alias):
         DEVICE_INTERFACE)
 
     addresses = []
+    matching_paths = []
     for path in devices:
         # Get the device's address and paired status
         device_props = dbus.Interface(
@@ -300,9 +304,16 @@ def find_devices_by_alias(alias):
         # Check for an address match
         if device_alias.upper() == alias.upper():
             addresses.append(device_addr)
+            matching_paths.append(path)
 
-    bus.close()
-    return addresses
+    # Close the dbus connection if we created one
+    if created_bus is None:
+        bus.close()
+
+    if return_path:
+        return addresses, matching_paths
+    else:
+        return addresses
 
 
 class BlueZ():
@@ -828,3 +839,38 @@ class BlueZ():
             return path
 
         return None
+    
+    def find_connected_devices(self, alias_filter=False):
+        """Finds the D-Bus path to a device that contains the
+        specified address.
+
+        :param address: The Bluetooth MAC address
+        :type address: string
+        :return: The path to the D-Bus object or None
+        :rtype: string or None
+        """
+
+        devices = find_objects(
+            self.bus,
+            SERVICE_NAME,
+            DEVICE_INTERFACE)
+        conn_devices = []
+        for path in devices:
+            # Get the device's connection status
+            device_props = dbus.Interface(
+                self.bus.get_object(SERVICE_NAME, path),
+                "org.freedesktop.DBus.Properties")
+            device_conn_status = device_props.Get(
+                DEVICE_INTERFACE,
+                "Connected")
+            device_alias = device_props.Get(
+                DEVICE_INTERFACE,
+                "Alias").upper()
+
+            if device_conn_status:
+                if alias_filter and device_alias == alias_filter.upper():
+                    conn_devices.append(path)
+                else:
+                    conn_devices.append(path)
+
+        return conn_devices
