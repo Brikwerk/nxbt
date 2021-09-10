@@ -107,6 +107,9 @@ def handle_macro(message):
     macro = message[1]
     nxbt.macro(index, macro, block=False)
 
+@sio.on('stopmacro')
+def stop_macro(message):
+    nxbt.clear_all_macros()
 
 def start_web_app(ip='0.0.0.0', port=8000, usessl=False, cert_path=None):
     if usessl:

@@ -647,6 +647,11 @@ function sendMacro() {
     socket.emit('macro', JSON.stringify([NXBT_CONTROLLER_INDEX, macro]));
 }
 
+function stopMacro() {
+    let macro = HTML_MACRO_TEXT.value.toUpperCase();
+    socket.emit('stopmacro', JSON.stringify([NXBT_CONTROLLER_INDEX, macro]));
+}
+
 /**********************************************/
 /* Debug Functionality */
 /**********************************************/
