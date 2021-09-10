@@ -2,6 +2,7 @@ import argparse
 from random import randint
 from time import sleep
 import os
+import traceback
 
 from .nxbt import Nxbt, PRO_CONTROLLER
 from .bluez import find_devices_by_alias
@@ -10,7 +11,7 @@ from .tui import InputTUI
 
 parser = argparse.ArgumentParser()
 parser.add_argument('command', default=False, choices=[
-                        'webapp', 'demo', 'macro', 'tui', 'remote_tui', 'addresses'
+                        'webapp', 'demo', 'macro', 'tui', 'remote_tui', 'addresses', 'test'
                     ],
                     help="""Specifies the nxbt command to run:
                     webapp - Runs web server and allows for controller/macro
@@ -22,7 +23,9 @@ parser.add_argument('command', default=False, choices=[
                     tui/remote_tui - Opens a TUI that allows for direct input from the keyboard
                     to the Switch. 
                     addresses - Lists the Bluetooth MAC addresses for
-                    all previously connected Nintendo Switches""")
+                    all previously connected Nintendo Switches.
+                    test - Runs through a series of tests to ensure NXBT is working and
+                    compatible with your system.""")
 parser.add_argument('-c', '--commands', required=False, default=False,
                     help="""Used in conjunction with the macro command. Specifies a
                     macro string or a file location to load a macro string from.""")
@@ -141,6 +144,9 @@ def demo():
 
     nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
     adapters = nx.get_available_adapters()
+    if len(adapters) < 1:
+        raise OSError("Unable to detect any Bluetooth adapters.")
+
     controller_idxs = []
     for i in range(0, len(adapters)):
         index = nx.create_controller(
@@ -160,7 +166,85 @@ def demo():
             print(state['errors'])
             exit(1)
         sleep(1.0)
+
     print("Finished!")
+
+
+def test():
+    """Tests NXBT functionality"""
+    # Init
+    print("[1] Attempting to initialize NXBT...")
+    nx = None
+    try:
+        nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
+    except Exception as e:
+        print("Failed to initialize:")
+        print(traceback.format_exc())
+        exit(1)
+    print("Successfully initialized NXBT.\n")
+
+    # Adapter Check
+    print("[2] Checking for Bluetooth adapter availability...")
+    adapters = None
+    try:
+        adapters = nx.get_available_adapters()
+    except Exception as e:
+        print("Failed to check for adapters:")
+        print(traceback.format_exc())
+        exit(1)
+    if len(adapters) < 1:
+        print("Unable to detect any Bluetooth adapters.")
+        print("Please ensure you system has Bluetooth capability.")
+        exit(1)
+    print(f"{len(adapters)} Bluetooth adapter(s) available.")
+    print("Adapters:", adapters, "\n")
+
+    # Creating a controller
+    print("[3] Please turn on your Switch and navigate to the 'Change Grip/Order menu.'")
+    input("Press Enter to continue...")
+
+    print("Creating a controller with the first Bluetooth adapter...")
+    cindex = None
+    try:
+        cindex = nx.create_controller(
+                 PRO_CONTROLLER,
+                 adapters[0],
+                 colour_body=random_colour(),
+                 colour_buttons=random_colour())
+    except Exception as e:
+        print("Failed to create a controller:")
+        print(traceback.format_exc())
+        exit(1)
+    print("Successfully created a controller.\n")
+
+    # Controller connection check
+    print("[4] Waiting for controller to connect with the Switch...")
+    timeout = 120
+    print(f"Connection timeout is {timeout} seconds for this test script.")
+    elapsed = 0
+    while nx.state[cindex]['state'] != 'connected':
+        if elapsed >= timeout:
+            print("Timeout reached, exiting...")
+            exit(1)
+        elif nx.state[cindex]['state'] == 'crashed':
+            print("An error occurred while connecting:")
+            print(nx.state[cindex]['errors'])
+            exit(1)
+        elapsed += 1
+        sleep(1)
+    print("Successfully connected.\n")
+
+    # Exit the Change Grip/Order Menu
+    print("[5] Attempting to exit the 'Change Grip/Order Menu'...")
+    nx.macro(cindex, "B 0.1s\n0.1s")
+    sleep(5)
+    if nx.state[cindex]['state'] != 'connected':
+        print("Controller disconnected after leaving the menu.")
+        print("Exiting...")
+        exit(1)
+    print("Controller successfully exited the menu.\n")
+
+    print("All tests passed.")
 
 
 def macro():
@@ -244,3 +328,5 @@ def main():
         tui.start()
     elif args.command == 'addresses':
         list_switch_addresses()
+    elif args.command == 'test':
+        test()
