@@ -88,7 +88,10 @@ class ControllerServer():
                 self.controller.setup()
 
                 if reconnect_address:
-                    itr, ctrl = self.reconnect(reconnect_address)
+                    try:
+                        itr, ctrl = self.reconnect(reconnect_address)
+                    except OSError:
+                        itr, ctrl = self.connect()
                 else:
                     itr, ctrl = self.connect()
             finally:
