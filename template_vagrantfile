@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2010"
+
+  # Publically forwarded ports.
+  # The below ports are accessible to all machines on the same network.
+  # To limit access to the local network, add "host_ip".
+  # Eg: config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 8000, host: 8000 # Web App
+  config.vm.network "forwarded_port", guest: 9000, host: 9000 # Remote server
+
+  # Explicitly create a shared folder of the Vagrantfile directory at /vagrant in the VM
+  config.vm.synced_folder ".", "/vagrant"
+
+  # Install NXBT
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get install -y python3-pip bluez bluetooth pkg-config build-essential libdbus-glib-1-dev libgirepository1.0-dev
+    {{SHELL_CONFIG}}
+  SHELL
+
+  # Enable USB Controller on VirtualBox
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"
+    vb.cpus = 2
+    vb.customize ["modifyvm", :id, "--usb", "on"]
+    vb.customize ["modifyvm", :id, "--usbehci", "on"]
+    {{USB_FILTER}}
+  end
+end
