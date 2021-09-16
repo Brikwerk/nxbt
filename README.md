@@ -50,13 +50,9 @@ sudo pip3 install nxbt
 
 **Please Note:** NXBT needs root privileges to toggle the BlueZ Input plugin. If you're not comfortable running this program as root, you can disable the Input plugin manually, and install NXBT as a regular user.
 
-### MacOS
+### Windows and macOS
 
-Coming Soon (time permitting)
-
-### Windows
-
-Under Investigation
+See the installation guide [here.](docs/Windows-and-macOS-Installation.md)
 
 ## Getting Started
 
