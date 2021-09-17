@@ -12,7 +12,7 @@ def find_line_items(identifier, input_string):
 
 def get_usb_devices():
     usb_string = subprocess.check_output(['VBoxManage', 'list', 'usbhost'])
-    usb_string = usb_string.decode("utf-8")
+    usb_string = usb_string.decode("utf-8").replace('r', '')
 
     usb_devices = usb_string.split("\n\n")
     devices = []
@@ -46,13 +46,15 @@ def get_usb_devices():
 def is_cli(cli_string):
     return which(cli_string) is not None
 
-def check_cli(name, cli_string):
+def check_cli(name, cli_string, msg=None):
     print(name, end="")
     if is_cli(cli_string):
         print(" [OK]")
     else:
         print(" [ERROR]")
         print(f" -> {name} wasn't found on your system")
+        if msg is not None:
+            print(msg)
         exit(1)
 
 GH_SHELL_CONFIG = """cd /vagrant
@@ -61,9 +63,15 @@ PYPI_SHELL_CONFIG = """pip3 install nxbt"""
 
 if __name__ == "__main__":
     print("Checking for the required utilities...")
-    check_cli("Vagrant", "vagrant")
-    check_cli("VirtualBox", "VBoxManage")
-    check_cli("Git", "git")
+
+    vg_msg = ("    Please ensure that Vagrant is installed and available on\n"
+              "    your system path.")
+    check_cli("Vagrant", "vagrant", msg=vg_msg)
+
+    vb_msg = ("    VBoxManage (part of the VirtualBox CLI) wasn't found\n"
+              "    on your system path. Please ensure that VirtualBox is\n"
+              "    installed and VBoxManage is on your system path.")
+    check_cli("VirtualBox", "VBoxManageaa", msg=vb_msg)
     print("")
 
     print("---")
