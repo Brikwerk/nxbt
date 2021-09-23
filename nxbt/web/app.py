@@ -2,6 +2,7 @@ import json
 import os
 from threading import RLock
 import time
+from socket import gethostname
 
 from .cert import generate_cert
 from ..nxbt import Nxbt, PRO_CONTROLLER
@@ -144,7 +145,7 @@ def start_web_app(ip='0.0.0.0', port=8000, usessl=False, cert_path=None):
                 "\n"
             )
             print("Generating certificates...")
-            cert, key = generate_cert('localhost')
+            cert, key = generate_cert(gethostname())
             with open(cert_path, "wb") as f:
                 f.write(cert)
             with open(key_path, "wb") as f:
