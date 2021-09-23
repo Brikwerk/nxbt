@@ -463,6 +463,22 @@ function changeInput(evt) {
     }
 }
 
+function changeFrequency(evt) {
+    let newFrequency = evt.target.value;
+    
+    if (newFrequency === "RAF") {
+        useRAF = true;
+    } else {
+        newFrequency = Number(newFrequency);
+        if (!isNaN(newFrequency)) {
+            useRAF = false;
+            frequency = (1/newFrequency) * 1000;
+        } else {
+            console.log("New frequency is not a number");
+        }
+    }
+}
+
 const LOADER_ANIMATION_FRAMES = [0,1,2,3,3,2,1,0];
 let loaderFrame = 1;
 let highlightedBlock = false;
@@ -547,7 +563,8 @@ function updateGamepadDisplay() {
 }
 
 let timeOld = false;
-let frequency = (1/120) * 1000;
+let frequency = (1/240) * 1000;
+let useRAF = false;
 function eventLoop() {
     // Update x/y ratio for the sticks based on
     // pressed buttons if we're using a keyboard
@@ -601,21 +618,23 @@ function eventLoop() {
 
     updateGamepadDisplay()
 
-    // if (!timeOld) {
-    //     timeOld = performance.now();
-    // }
-    // timeNew = performance.now();
-    // delta = timeNew - timeOld;
-    // diff = delta - frequency;
-
-    // if (diff > 0) {
-    //     setTimeout(eventLoop, frequency - diff);
-    // } else {
-    //     setTimeout(eventLoop, frequency);
-    // }
-    // timeOld = timeNew;
-
-    requestAnimationFrame(eventLoop);
+    if (useRAF) {
+        requestAnimationFrame(eventLoop);
+    } else {
+        if (!timeOld) {
+            timeOld = performance.now();
+        }
+        timeNew = performance.now();
+        delta = timeNew - timeOld;
+        diff = delta - frequency;
+    
+        if (diff > 0) {
+            setTimeout(eventLoop, frequency - diff);
+        } else {
+            setTimeout(eventLoop, frequency);
+        }
+        timeOld = timeNew;
+    }
 }
 
 function sendMacro() {
