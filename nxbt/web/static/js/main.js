@@ -394,6 +394,11 @@ function recreateProController() {
     socket.emit('create_pro_controller');
 }
 
+function restartController() {
+    shutdownController();
+    setTimeout(recreateProController, 2000);
+}
+
 function checkForLoad() {
     if (STATE[NXBT_CONTROLLER_INDEX]) {
         controller_state = STATE[NXBT_CONTROLLER_INDEX].state
