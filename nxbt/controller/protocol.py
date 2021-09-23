@@ -242,7 +242,7 @@ class ControllerProtocol():
 
         # Get how many ticks have passed in hex with overflow at 255
         # Joy-Con uses 4.96ms as the timer tick rate
-        elapsed_ticks = int(delta_t // 4.96)
+        elapsed_ticks = int(delta_t * 4)
         self.timer = (self.timer + elapsed_ticks) & 0xFF
 
         self.report[2] = self.timer
