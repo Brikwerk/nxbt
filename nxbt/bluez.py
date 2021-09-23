@@ -316,6 +316,49 @@ def find_devices_by_alias(alias, return_path=False, created_bus=None):
         return addresses
 
 
+def disconnect_devices_by_alias(alias, created_bus=None):
+    """Disconnects all devices matching an alias.
+
+    :param alias: The device's alias
+    :type alias: string
+    """
+
+    if created_bus is not None:
+        bus = created_bus
+    else:
+        bus = dbus.SystemBus()
+    # Find all connected/paired/discovered devices
+    devices = find_objects(
+        bus,
+        SERVICE_NAME,
+        DEVICE_INTERFACE)
+
+    addresses = []
+    matching_paths = []
+    for path in devices:
+        # Get the device's address and paired status
+        device_props = dbus.Interface(
+            bus.get_object(SERVICE_NAME, path),
+            "org.freedesktop.DBus.Properties")
+        device_alias = device_props.Get(
+            DEVICE_INTERFACE,
+            "Alias").upper()
+
+        # Check for an alias match
+        if device_alias.upper() == alias.upper():
+            device = dbus.Interface(
+                bus.get_object(SERVICE_NAME, path),
+                DEVICE_INTERFACE)
+            try:
+                device.Disconnect()
+            except Exception as e:
+                print(e)
+
+    # Close the dbus connection if we created one
+    if created_bus is None:
+        bus.close()
+
+
 class BlueZ():
     """Exposes the BlueZ D-Bus API as a Python object.
     """
