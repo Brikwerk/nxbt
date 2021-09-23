@@ -165,7 +165,7 @@ class ControllerServer():
                     self.cached_msg = msg[3:]
                 # Send a blank packet every so often to keep the Switch
                 # from disconnecting from the controller.
-                elif self.tick == 660:
+                elif self.tick == 2400:
                     itr.sendall(msg)
                     self.tick = 0
                     # print(msg, "tick")
@@ -179,7 +179,7 @@ class ControllerServer():
             timer_end = time.perf_counter()
             elapsed_time = timer_end - timer_start
             
-            sleep_time = 1/66 - elapsed_time
+            sleep_time = 1/240 - elapsed_time
             if sleep_time >= 0:
                 time.sleep(sleep_time)
             self.tick += 1
@@ -289,7 +289,7 @@ class ControllerServer():
                         self.bt.remove_device(key)
                         connected_devices_count[key] = 0
 
-            time.sleep(0.25)
+            time.sleep(0.1)
 
     def connect(self):
         """Configures as a specified controller, pairs with a Nintendo Switch,
