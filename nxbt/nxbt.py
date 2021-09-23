@@ -596,6 +596,13 @@ class Nxbt():
         """
 
         if controller_index not in self.manager_state.keys():
+            if controller_index in self._controller_adapter_lookup.keys():
+                # Attempt to free any adapters claimed by a crashed controller
+                try:
+                    adapter_path = self._controller_adapter_lookup.pop(controller_index, None)
+                    self._adapters_in_use.pop(adapter_path, None)
+                except Exception:
+                    pass
             raise ValueError("Specified controller does not exist")
 
         self._controller_lock.acquire()
@@ -772,8 +779,8 @@ class _ControllerManager():
         })
 
     def remove_controller(self, index):
-
-        self._children[index].kill()
+        
+        self._children[index].terminate()
         self.state.pop(index, None)
 
     def shutdown(self):
