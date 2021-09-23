@@ -165,12 +165,13 @@ class InputParser():
         :return: True (on an active button) or False (no active buttons)
         :rtype: bool
         """
-        if (self.current_macro_commands is not None or 
-                dumps(self.controller_input) != dumps(DIRECT_INPUT_IDLE_PACKET)):
+        if (self.current_macro_commands is not None):
             if len(self.current_macro_commands) < 2:
                 return False
             else:
                 return True
+        elif dumps(self.controller_input) != dumps(DIRECT_INPUT_IDLE_PACKET):
+            return True
         else:
             return False
 
