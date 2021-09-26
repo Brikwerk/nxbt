@@ -568,8 +568,8 @@ function updateGamepadDisplay() {
 }
 
 let timeOld = false;
-let frequency = (1/240) * 1000;
-let useRAF = false;
+let frequency = (1/120) * 1000;
+let useRAF = true;
 function eventLoop() {
     // Update x/y ratio for the sticks based on
     // pressed buttons if we're using a keyboard
