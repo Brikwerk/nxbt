@@ -22,7 +22,11 @@ LOOP 12
     0.075s
 A 0.1s
 0.25s
-DPAD_DOWN 0.93s
+LOOP 3
+    DPAD_DOWN 0.1s
+    0.1s
+DPAD_DOWN 0.54s
+0.1s
 A 0.1s
 0.25s
 L_STICK_PRESS 0.1s
