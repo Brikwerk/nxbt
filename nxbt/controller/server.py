@@ -165,7 +165,7 @@ class ControllerServer():
                     self.cached_msg = msg[3:]
                 # Send a blank packet every so often to keep the Switch
                 # from disconnecting from the controller.
-                elif self.tick == 2400:
+                elif self.tick >= 1320:
                     itr.sendall(msg)
                     self.tick = 0
                     # print(msg, "tick")
@@ -179,7 +179,12 @@ class ControllerServer():
             timer_end = time.perf_counter()
             elapsed_time = timer_end - timer_start
             
-            sleep_time = 1/240 - elapsed_time
+            duration_end = time.perf_counter()
+            duration_elapsed = duration_end - duration_start
+            duration_start = duration_end
+            self.durations.append(duration_elapsed)
+            
+            sleep_time = 1/132 - duration_elapsed
             if sleep_time >= 0:
                 time.sleep(sleep_time)
             self.tick += 1
@@ -259,6 +264,7 @@ class ControllerServer():
         return itr, ctrl
 
     def connection_reset_watchdog(self):
+
         connected_devices = []
         connected_devices_count = {}
         while self._crw_running:
@@ -296,93 +302,103 @@ class ControllerServer():
         and creates/accepts sockets for communication with the Switch.
         """
 
-        self.state["state"] = "connecting"
-
-        # Creating control and interrupt sockets
-        s_ctrl = socket.socket(
-            family=socket.AF_BLUETOOTH,
-            type=socket.SOCK_SEQPACKET,
-            proto=socket.BTPROTO_L2CAP)
-        s_itr = socket.socket(
-            family=socket.AF_BLUETOOTH,
-            type=socket.SOCK_SEQPACKET,
-            proto=socket.BTPROTO_L2CAP)
-
-        # Setting up HID interrupt/control sockets
-        try:
-            s_ctrl.bind((self.bt.address, 17))
-            s_itr.bind((self.bt.address, 19))
-        except OSError:
-            s_ctrl.bind((socket.BDADDR_ANY, 17))
-            s_itr.bind((socket.BDADDR_ANY, 19))
-
-        s_itr.listen(1)
-        s_ctrl.listen(1)
-
-        self.bt.set_discoverable(True)
-
-        # WARNING:
-        # A device's class must be set **AFTER** discoverability
-        # is set. If it is set before or in a similar timeframe,
-        # the class will be reset to the default value.
-        self.bt.set_class("0x02508")
-
-        self._crw_running = True
-        crw = Thread(target = self.connection_reset_watchdog)
-        crw.start()
-
-        itr, itr_address = s_itr.accept()
-        ctrl, ctrl_address = s_ctrl.accept()
-
-        self._crw_running = False
-
-        # Send an empty input report to the Switch to prompt a reply
-        self.protocol.process_commands(None)
-        msg = self.protocol.get_report()
-        itr.sendall(msg)
-
-        # Setting interrupt connection as non-blocking.
-        # In this case, non-blocking means it throws a "BlockingIOError"
-        # for sending and receiving, instead of blocking.
-        fcntl.fcntl(itr, fcntl.F_SETFL, os.O_NONBLOCK)
-
-        # Mainloop
-        received_first_message = False
+        # The controller server will continue attempting to connect
+        # to any Nintendo Switch until the connection procedure fully
+        # succeeds. This prevents situations where the Switch will
+        # disconnect during a connection.
         while True:
-            # Attempt to get output from Switch
             try:
-                reply = itr.recv(50)
-                if self.logger_level <= logging.DEBUG and len(reply) > 40:
-                    self.logger.debug(format_msg_switch(reply))
-            except BlockingIOError:
-                reply = None
+                self.state["state"] = "connecting"
 
-            if reply:
-                received_first_message = True
+                # Creating control and interrupt sockets
+                s_ctrl = socket.socket(
+                    family=socket.AF_BLUETOOTH,
+                    type=socket.SOCK_SEQPACKET,
+                    proto=socket.BTPROTO_L2CAP)
+                s_itr = socket.socket(
+                    family=socket.AF_BLUETOOTH,
+                    type=socket.SOCK_SEQPACKET,
+                    proto=socket.BTPROTO_L2CAP)
 
-            self.protocol.process_commands(reply)
-            msg = self.protocol.get_report()
+                # Setting up HID interrupt/control sockets
+                try:
+                    s_ctrl.bind((self.bt.address, 17))
+                    s_itr.bind((self.bt.address, 19))
+                except OSError:
+                    s_ctrl.bind((socket.BDADDR_ANY, 17))
+                    s_itr.bind((socket.BDADDR_ANY, 19))
 
-            if self.logger_level <= logging.DEBUG and reply:
-                self.logger.debug(format_msg_controller(msg))
+                s_itr.listen(1)
+                s_ctrl.listen(1)
 
-            try:
+                self.bt.set_discoverable(True)
+
+                # WARNING:
+                # A device's class must be set **AFTER** discoverability
+                # is set. If it is set before or in a similar timeframe,
+                # the class will be reset to the default value.
+                self.bt.set_class("0x02508")
+
+                self._crw_running = True
+                crw = Thread(target = self.connection_reset_watchdog)
+                crw.start()
+
+                itr, itr_address = s_itr.accept()
+                ctrl, ctrl_address = s_ctrl.accept()
+
+                self._crw_running = False
+
+                # Send an empty input report to the Switch to prompt a reply
+                self.protocol.process_commands(None)
+                msg = self.protocol.get_report()
                 itr.sendall(msg)
-            except BlockingIOError:
-                continue
 
-            # Exit pairing loop when player lights have been set and
-            # vibration has been enabled
-            if (reply and len(reply) > 45 and
-                    self.protocol.vibration_enabled and self.protocol.player_number):
+                # Setting interrupt connection as non-blocking.
+                # In this case, non-blocking means it throws a "BlockingIOError"
+                # for sending and receiving, instead of blocking.
+                fcntl.fcntl(itr, fcntl.F_SETFL, os.O_NONBLOCK)
+
+                # Mainloop
+                received_first_message = False
+                while True:
+                    # Attempt to get output from Switch
+                    try:
+                        reply = itr.recv(50)
+                        if self.logger_level <= logging.DEBUG and len(reply) > 40:
+                            self.logger.debug(format_msg_switch(reply))
+                    except BlockingIOError:
+                        reply = None
+
+                    if reply:
+                        received_first_message = True
+
+                    self.protocol.process_commands(reply)
+                    msg = self.protocol.get_report()
+
+                    if self.logger_level <= logging.DEBUG and reply:
+                        self.logger.debug(format_msg_controller(msg))
+
+                    try:
+                        itr.sendall(msg)
+                    except BlockingIOError:
+                        continue
+
+                    # Exit pairing loop when player lights have been set and
+                    # vibration has been enabled
+                    if (reply and len(reply) > 45 and
+                            self.protocol.vibration_enabled and self.protocol.player_number):
+                        break
+
+                    # Switch responds to packets slower during pairing
+                    # Pairing cycle responds optimally on a 15Hz loop
+                    if not received_first_message:
+                        time.sleep(1)
+                    else:
+                        time.sleep(1/15)
+                
                 break
-
-            # Switch responds to packets slower during pairing
-            # Pairing cycle responds optimally on a 15Hz loop
-            if not received_first_message:
-                time.sleep(1)
-            else:
-                time.sleep(1/15)
+            except OSError as e:
+                self.logger.debug(e)
 
         self.input.exited_grip_order_menu = False
 
