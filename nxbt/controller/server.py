@@ -117,6 +117,7 @@ class ControllerServer():
 
     def mainloop(self, itr, ctrl):
 
+        duration_start = time.perf_counter()
         while True:
             # Start timing command processing
             timer_start = time.perf_counter()
@@ -176,13 +177,9 @@ class ControllerServer():
                 itr, ctrl = self.save_connection(e)
 
             # Figure out how long it took to process commands
-            timer_end = time.perf_counter()
-            elapsed_time = timer_end - timer_start
-            
             duration_end = time.perf_counter()
             duration_elapsed = duration_end - duration_start
             duration_start = duration_end
-            self.durations.append(duration_elapsed)
             
             sleep_time = 1/132 - duration_elapsed
             if sleep_time >= 0:
@@ -190,7 +187,7 @@ class ControllerServer():
             self.tick += 1
 
             if self.logger_level <= logging.DEBUG:
-                self.times.append(elapsed_time)
+                self.times.append(duration_elapsed)
                 if len(self.times) > 100:
                     self.times.pop()
                 mean_time = stat.mean(self.times)
