@@ -740,6 +740,11 @@ class _ControllerManager():
         controller_state["finished_macros"] = []
         controller_state["errors"] = False
         controller_state["direct_input"] = json.loads(json.dumps(DIRECT_INPUT_PACKET))
+        controller_state["colour_body"] = colour_body
+        controller_state["colour_buttons"] = colour_buttons
+        controller_state["type"] = str(controller_type)
+        controller_state["adapter_path"] = adapter_path
+        controller_state["last_connection"] = None
 
         self._controller_queues[index] = controller_queue
 

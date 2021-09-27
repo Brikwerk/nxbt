@@ -98,7 +98,8 @@ class ControllerServer():
                 if self.lock:
                     self.lock.release()
 
-            self.switch_address = itr.getsockname()[0]
+            self.switch_address = itr.getpeername()[0]
+            self.state["last_connection"] = self.switch_address
 
             self.state["state"] = "connected"
 
@@ -166,10 +167,9 @@ class ControllerServer():
                     self.cached_msg = msg[3:]
                 # Send a blank packet every so often to keep the Switch
                 # from disconnecting from the controller.
-                elif self.tick >= 1320:
+                elif self.tick >= 132:
                     itr.sendall(msg)
                     self.tick = 0
-                    # print(msg, "tick")
             except BlockingIOError:
                 continue
             except OSError as e:
@@ -207,10 +207,50 @@ class ControllerServer():
                     self.bt.address,
                     colour_body=self.colour_body,
                     colour_buttons=self.colour_buttons)
+                self.input.reassign_protocol(self.protocol)
                 if self.lock:
                     self.lock.acquire()
                 try:
                     itr, ctrl = self.reconnect(self.switch_address)
+
+                    received_first_message = False
+                    while True:
+                        # Attempt to get output from Switch
+                        try:
+                            reply = itr.recv(50)
+                            if self.logger_level <= logging.DEBUG and len(reply) > 40:
+                                self.logger.debug(format_msg_switch(reply))
+                        except BlockingIOError:
+                            reply = None
+
+                        if reply:
+                            received_first_message = True
+
+                        self.protocol.process_commands(reply)
+                        msg = self.protocol.get_report()
+
+                        if self.logger_level <= logging.DEBUG and reply:
+                            self.logger.debug(format_msg_controller(msg))
+
+                        try:
+                            itr.sendall(msg)
+                        except BlockingIOError:
+                            continue
+
+                        # Exit pairing loop when player lights have been set and
+                        # vibration has been enabled
+                        if (reply and len(reply) > 45 and
+                                self.protocol.vibration_enabled and self.protocol.player_number):
+                            break
+
+                        # Switch responds to packets slower during pairing
+                        # Pairing cycle responds optimally on a 15Hz loop
+                        if not received_first_message:
+                            time.sleep(1)
+                        else:
+                            time.sleep(1/15)
+
+                    self.state["state"] = "connected"
                     return itr, ctrl
                 finally:
                     if self.lock:
