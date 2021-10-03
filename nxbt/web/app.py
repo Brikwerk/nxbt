@@ -1,7 +1,10 @@
 import json
 import os
 from threading import RLock
+import time
+from socket import gethostname
 
+from .cert import generate_cert
 from ..nxbt import Nxbt, PRO_CONTROLLER
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
@@ -88,6 +91,7 @@ def on_create_controller():
 
 @sio.on('input')
 def handle_input(message):
+    # print("Webapp Input", time.perf_counter())
     message = json.loads(message)
     index = message[0]
     input_packet = message[1]
@@ -102,8 +106,55 @@ def handle_macro(message):
     nxbt.macro(index, macro)
 
 
-def start_web_app(ip='0.0.0.0', port=8000):
-    eventlet.wsgi.server(eventlet.listen((ip, port)), app)
+def start_web_app(ip='0.0.0.0', port=8000, usessl=False, cert_path=None):
+    if usessl:
+        if cert_path is None:
+            # Store certs in the package directory
+            cert_path = os.path.join(
+                os.path.dirname(__file__), "cert.pem"
+            )
+            key_path = os.path.join(
+                os.path.dirname(__file__), "key.pem"
+            )
+        else:
+            # If specified, store certs at the user's preferred location
+            cert_path = os.path.join(
+                cert_path, "cert.pem"
+            )
+            key_path = os.path.join(
+                cert_path, "key.pem"
+            )
+        if not os.path.isfile(cert_path) or not os.path.isfile(key_path):
+            print(
+                "\n"
+                "-----------------------------------------\n"
+                "---------------->WARNING<----------------\n"
+                "The NXBT webapp is being run with self-\n"
+                "signed SSL certificates for use on your\n"
+                "local network.\n"
+                "\n"
+                "These certificates ARE NOT safe for\n"
+                "production use. Please generate valid\n"
+                "SSL certificates if you plan on using the\n"
+                "NXBT webapp anywhere other than your own\n"
+                "network.\n"
+                "-----------------------------------------\n"
+                "\n"
+                "The above warning will only be shown once\n"
+                "on certificate generation."
+                "\n"
+            )
+            print("Generating certificates...")
+            cert, key = generate_cert(gethostname())
+            with open(cert_path, "wb") as f:
+                f.write(cert)
+            with open(key_path, "wb") as f:
+                f.write(key)
+
+        eventlet.wsgi.server(eventlet.wrap_ssl(eventlet.listen((ip, port)),
+            certfile=cert_path, keyfile=key_path), app)
+    else:
+        eventlet.wsgi.server(eventlet.listen((ip, port)), app)
 
 
 if __name__ == "__main__":

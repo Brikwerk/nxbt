@@ -35,7 +35,7 @@ import time
 import fcntl
 from time import perf_counter
 
-from nxbt import toggle_input_plugin
+from nxbt import toggle_clean_bluez
 from nxbt import BlueZ
 from nxbt import Controller
 from nxbt import JOYCON_L, JOYCON_R, PRO_CONTROLLER
@@ -116,7 +116,8 @@ def write_to_buffer(buffer, message, message_type):
 
 if __name__ == "__main__":
     # Switch Controller Bluetooth MAC Address goes here
-    jc_MAC = "98:B6:E9:B0:05:E7"
+    # jc_MAC = "98:B6:E9:B0:05:E7"
+    jc_MAC = "7C:BB:8A:FA:41:3D"
     # Specify the type of controller here
     controller_type = PRO_CONTROLLER
     if controller_type == JOYCON_L:
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     port_itr = 19
     message_buffer = []
 
-    toggle_input_plugin(False)
+    toggle_clean_bluez(True)
     bt = BlueZ(adapter_path="/org/bluez/hci0")
 
     controller = Controller(bt, controller_type)
@@ -148,6 +149,12 @@ if __name__ == "__main__":
                                type=socket.SOCK_SEQPACKET,
                                proto=socket.BTPROTO_L2CAP)
     switch_ctrl = socket.socket(family=socket.AF_BLUETOOTH,
+                                type=socket.SOCK_SEQPACKET,
+                                proto=socket.BTPROTO_L2CAP)
+    switch_test1 = socket.socket(family=socket.AF_BLUETOOTH,
+                                type=socket.SOCK_SEQPACKET,
+                                proto=socket.BTPROTO_L2CAP)
+    switch_test3 = socket.socket(family=socket.AF_BLUETOOTH,
                                 type=socket.SOCK_SEQPACKET,
                                 proto=socket.BTPROTO_L2CAP)
 
@@ -178,6 +185,23 @@ if __name__ == "__main__":
         jc_ctrl.connect((jc_MAC, port_ctrl))
         jc_itr.connect((jc_MAC, port_itr))
         print("Got connection.")
+
+        # print("Bruteforcing sockets")
+        # for i in range(1,99999,2):
+        #     try:
+        #         test_socket = socket.socket(family=socket.AF_BLUETOOTH,
+        #                                 type=socket.SOCK_SEQPACKET,
+        #                                 proto=socket.BTPROTO_L2CAP)
+        #         test_socket.settimeout(3)
+        #         # print("Connecting to", i)
+        #         test_socket.connect((jc_MAC, i))
+        #         print("!!!!!! Got connection to", i)
+        #     except Exception as e:
+        #         # print(str(e))
+        #         pass
+
+        # switch_test1.bind((bt.address, 1))
+        # switch_test3.bind((bt.address, 3))
 
         switch_ctrl.bind((bt.address, port_ctrl))
         switch_itr.bind((bt.address, port_itr))
@@ -285,9 +309,9 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Closing sockets")
 
-        time_new = perf_counter()
-        print(f"Total Delta: {(time_new - time_old) * 1000}")
-        print(f"Timer Counter: {timer_counter}")
+        # time_new = perf_counter()
+        # print(f"Total Delta: {(time_new - time_old) * 1000}")
+        # print(f"Timer Counter: {timer_counter}")
 
         jc_ctrl.close()
         jc_itr.close()
@@ -299,11 +323,6 @@ if __name__ == "__main__":
         with open("messages.txt", "w") as f:
             f.write("\n".join(message_buffer))
 
-        try:
-            sys.exit(1)
-        except SystemExit:
-            os._exit(1)
-
     except OSError as e:
         print("Closing sockets")
 
@@ -313,7 +332,11 @@ if __name__ == "__main__":
         switch_itr.close()
         switch_ctrl.close()
 
+        # Write the buffer
+        with open("messages.txt", "w") as f:
+            f.write("\n".join(message_buffer))
+
         raise e
 
     finally:
-        toggle_input_plugin(True)
+        toggle_clean_bluez(False)

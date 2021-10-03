@@ -12,7 +12,8 @@ import dbus
 
 from .controller import ControllerServer
 from .controller import ControllerTypes
-from .bluez import find_objects, toggle_input_plugin
+from .bluez import BlueZ, find_objects, toggle_clean_bluez
+from .bluez import replace_mac_addresses
 from .bluez import find_devices_by_alias
 from .bluez import SERVICE_NAME, ADAPTER_INTERFACE
 from .logging import create_logger
@@ -177,10 +178,7 @@ class Nxbt():
 
         # Disable the BlueZ input plugin so we can use the
         # HID control/interrupt Bluetooth ports
-        try:
-            toggle_input_plugin(False)
-        except PermissionError:
-            pass
+        toggle_clean_bluez(True)
 
         # Exit handler
         atexit.register(self._on_exit)
@@ -209,11 +207,8 @@ class Nxbt():
 
         self.resource_manager.shutdown()
 
-        # Re-enable the BlueZ input plugin, if we have permission
-        try:
-            toggle_input_plugin(True)
-        except PermissionError:
-            pass
+        # Re-enable the BlueZ plugins, if we have permission
+        toggle_clean_bluez(False)
 
     def _command_manager(self, task_queue, state):
         """Used as the main multiprocessing Process that is launched
@@ -601,6 +596,13 @@ class Nxbt():
         """
 
         if controller_index not in self.manager_state.keys():
+            if controller_index in self._controller_adapter_lookup.keys():
+                # Attempt to free any adapters claimed by a crashed controller
+                try:
+                    adapter_path = self._controller_adapter_lookup.pop(controller_index, None)
+                    self._adapters_in_use.pop(adapter_path, None)
+                except Exception:
+                    pass
             raise ValueError("Specified controller does not exist")
 
         self._controller_lock.acquire()
@@ -641,6 +643,7 @@ class Nxbt():
 
         bus = dbus.SystemBus()
         adapters = find_objects(bus, SERVICE_NAME, ADAPTER_INTERFACE)
+        bus.close()
 
         return adapters
 
@@ -737,6 +740,11 @@ class _ControllerManager():
         controller_state["finished_macros"] = []
         controller_state["errors"] = False
         controller_state["direct_input"] = json.loads(json.dumps(DIRECT_INPUT_PACKET))
+        controller_state["colour_body"] = colour_body
+        controller_state["colour_buttons"] = colour_buttons
+        controller_state["type"] = str(controller_type)
+        controller_state["adapter_path"] = adapter_path
+        controller_state["last_connection"] = None
 
         self._controller_queues[index] = controller_queue
 
@@ -776,8 +784,8 @@ class _ControllerManager():
         })
 
     def remove_controller(self, index):
-
-        self._children[index].kill()
+        
+        self._children[index].terminate()
         self.state.pop(index, None)
 
     def shutdown(self):

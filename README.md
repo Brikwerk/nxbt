@@ -50,13 +50,9 @@ sudo pip3 install nxbt
 
 **Please Note:** NXBT needs root privileges to toggle the BlueZ Input plugin. If you're not comfortable running this program as root, you can disable the Input plugin manually, and install NXBT as a regular user.
 
-### MacOS
+### Windows and macOS
 
-Coming Soon (time permitting)
-
-### Windows
-
-Under Investigation
+See the installation guide [here.](docs/Windows-and-macOS-Installation.md)
 
 ## Getting Started
 
@@ -295,7 +291,7 @@ controller_index = nx.create_controller(
     reconnect_address=nx.get_switch_addresses())
 ```
 
-**Stopping or Clearning Macros**
+**Stopping or Clearing Macros**
 ```python
 # Stops/deletes a single macro from a specified controller
 nx.stop_macro(controller_index, macro_id)
@@ -308,6 +304,10 @@ nx.clear_all_macros()
 ```
 
 ## Troubleshooting
+
+### My controller disconnects after exiting the "Change Grip/Order" Menu
+
+This can occasionally occur due to timing sensitivites when transitioning off of the "Change Grip/Order" menu. To avoid disconnections when exiting this menu, please only press A (or B) a single time and wait until the menu has fully exited. If a disconnect still occurs, you should be able to reconnect your controller and use NXBT as normal.
 
 ### "No Available Adapters"
 

@@ -141,3 +141,7 @@ cython_debug/
 .vscode
 secrets.txt
 messages.txt
+Vagrantfile
+.vagrant
+cert.pem
+key.pem

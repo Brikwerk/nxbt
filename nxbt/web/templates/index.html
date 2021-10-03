@@ -11,7 +11,7 @@
         <header class="top-bar">
             <div class="top-bar-wrapper">
                 <div>
-                    <h1>NXBT</h1><div class="mono">v0.1.3</div>
+                    <h1>NXBT</h1><div class="mono">v0.1.4</div>
                 </div>
                 <div id="status-indicator" class="hidden surface-lighter">
                     <div id="status-indicator-light" class="indicator-yellow"></div>
@@ -70,7 +70,7 @@
                 </div>
             </section>
 
-            <section id="controller-config" class="hidden surface">
+            <section id="controller-config" class="surface hidden">
                 <div id="controller-underlay-container">
                     <div class="controller-display hidden">
                         <div class="control-indicator" id="jl_"></div>
@@ -119,6 +119,19 @@
                         <strong>Note:</strong> You will likely need to press
                         a button on the gamepad before it shows up on the
                         input device list.
+                    </p>
+                    <h2 class="surface-lighter">Input Sampling Frequency</h2>
+                    <select id="input-frequency" name="Select an Input Sampling Frequency" onchange="changeFrequency(event)">
+                        <option value="RAF">Monitor Refresh Rate</option>
+                        <option value="240">240Hz</option>
+                        <option value="120">120Hz</option>
+                        <option value="60">60Hz</option>
+                    </select>
+                    <p>
+                        Note: "Monitor Refresh Rate" is a more stable but 
+                        (potentially) slower frequency. This loop uses the
+                        "requestAnimationFrame()" function, rather than 
+                        "setTimeout()".
                     </p>
                     <h2 class="surface-lighter">Control Mapping</h2>
                     <div id="keyboard-map" class="surface-lighter">
@@ -184,6 +197,7 @@
                     <h2 class="surface-lighter">Controller Commands</h2>
                     <button onclick="shutdownController()">Shutdown Controller</button>
                     <button onclick="recreateProController()">Recreate Controller</button>
+                    <button onclick="restartController()">Restart Controller</button>
 
                     <h2 class="surface-lighter">Controller Macro</h2>
                     <p>

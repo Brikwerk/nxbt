@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+import logging
 
 import dbus
 
@@ -27,6 +28,7 @@ class Controller():
     def __init__(self, bluetooth, controller_type):
 
         self.bt = bluetooth
+        self.logger = logging.getLogger('nxbt')
 
         if controller_type not in self.ALIASES.keys():
             raise ValueError("Unknown controller type specified")
@@ -63,5 +65,5 @@ class Controller():
         # catch the error and continue
         try:
             self.bt.register_profile(self.SDP_RECORD_PATH, self.SDP_UUID, opts)
-        except dbus.exceptions.DBusException:
-            pass
+        except dbus.exceptions.DBusException as e:
+            self.logger.debug(e)

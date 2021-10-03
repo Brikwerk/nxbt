@@ -44,7 +44,7 @@ import os
 import time
 import fcntl
 
-from nxbt import toggle_input_plugin
+from nxbt import toggle_clean_bluez
 from nxbt import BlueZ
 from nxbt import Controller
 from nxbt import PRO_CONTROLLER
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     port_ctrl = 17
     port_itr = 19
 
-    toggle_input_plugin(False)
+    toggle_clean_bluez(False)
     bt = BlueZ(adapter_path="/org/bluez/hci0")
 
     controller = Controller(bt, PRO_CONTROLLER)
@@ -225,4 +225,4 @@ if __name__ == "__main__":
         raise e
 
     finally:
-        toggle_input_plugin(True)
+        toggle_clean_bluez(True)
