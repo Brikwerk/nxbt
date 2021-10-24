@@ -71,7 +71,7 @@ if __name__ == "__main__":
     vb_msg = ("    VBoxManage (part of the VirtualBox CLI) wasn't found\n"
               "    on your system path. Please ensure that VirtualBox is\n"
               "    installed and VBoxManage is on your system path.")
-    check_cli("VirtualBox", "VBoxManageaa", msg=vb_msg)
+    check_cli("VirtualBox", "VBoxManage", msg=vb_msg)
     print("")
 
     print("---")
