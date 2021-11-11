@@ -12,7 +12,7 @@ def find_line_items(identifier, input_string):
 
 def get_usb_devices():
     usb_string = subprocess.check_output(['VBoxManage', 'list', 'usbhost'])
-    usb_string = usb_string.decode("utf-8").replace('r', '')
+    usb_string = usb_string.decode("utf-8").replace('\r', '')
 
     usb_devices = usb_string.split("\n\n")
     devices = []
