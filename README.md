@@ -11,8 +11,8 @@
 <div align="center">
 
   [![Stars](https://img.shields.io/github/stars/brikwerk/nxbt.svg)]() 
-  [![GitHub Issues](https://img.shields.io/github/issues/brikwerk/nxbt.svg)](https://github.com/brikwerk/ctqa/issues)
-  [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/brikwerk/nxbt.svg)](https://github.com/brikwerk/ctqa/pulls)
+  [![GitHub Issues](https://img.shields.io/github/issues/brikwerk/nxbt.svg)](https://github.com/brikwerk/nxbt/issues)
+  [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/brikwerk/nxbt.svg)](nxbt)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE)
 
 </div>
