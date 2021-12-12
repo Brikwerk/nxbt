@@ -43,6 +43,30 @@ L_STICK@+000+000 0.75s
 1.0s
 ```
 
+### Loops
+
+A simple for-loop can be used to repeat a macro block a specified number of times. The below example loops through an indented macro block 100 times.
+
+```
+LOOP 100
+    B 0.1s
+    0.1s
+```
+
+Nested loops are also supported.
+
+```
+LOOP 100
+    B 0.1s
+    0.1s
+    # Nested loop
+    LOOP 5
+        A 0.1s
+        0.1s
+```
+
+Note, a macro line starting with `#` is ignored.
+
 ## Macro Control Values
 
 | Macro Value | Control Name |
