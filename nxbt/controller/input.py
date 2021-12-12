@@ -307,6 +307,7 @@ class InputParser():
 
         parsed = macro.split("\n")
         parsed = list(filter(lambda s: not s.strip() == "", parsed))
+        parsed = list(filter(lambda s: not s.strip().startswith("#"), parsed))
         parsed = self.parse_loops(parsed)
 
         return parsed
