@@ -244,7 +244,8 @@ class Nxbt():
                             msg["arguments"]["adapter_path"],
                             msg["arguments"]["colour_body"],
                             msg["arguments"]["colour_buttons"],
-                            msg["arguments"]["reconnect_address"])
+                            msg["arguments"]["reconnect_address"],
+                            msg["arguments"]["frequency"])
                     elif msg["command"] == NxbtCommands.INPUT_MACRO:
                         cm.input_macro(
                             msg["arguments"]["controller_index"],
@@ -499,7 +500,7 @@ class Nxbt():
 
     def create_controller(self, controller_type, adapter_path=None,
                           colour_body=None, colour_buttons=None,
-                          reconnect_address=None):
+                          reconnect_address=None, frequency=66):
         """Used to create a Nintendo Switch controller of a
         given type and colour on an (optionally) specified
         bluetooth adapter.
@@ -529,6 +530,8 @@ class Nxbt():
         :param reconnect_address: A previously connected to
         Switch's Bluetooth MAC address, defaults to None
         :type reconnect_address: str or list, optional
+        :param frequency: The frequency of the controller server.
+        :type frequency: int, optional
         :raises ValueError: If specified adapter is unavailable
         :raises ValueError: If specified adapter is in use
         :return: The index of the created controller
@@ -562,6 +565,7 @@ class Nxbt():
                     "colour_body": colour_body,
                     "colour_buttons": colour_buttons,
                     "reconnect_address": reconnect_address,
+                    "frequency": frequency,
                 }
             })
             controller_index = self._controller_counter
@@ -709,7 +713,7 @@ class _ControllerManager():
 
     def create_controller(self, index, controller_type, adapter_path,
                           colour_body=None, colour_buttons=None,
-                          reconnect_address=None):
+                          reconnect_address=None, frequency=66):
         """Instantiates a given controller as a multiprocessing
         Process with a shared state dict and a task queue.
 
@@ -756,7 +760,8 @@ class _ControllerManager():
                                   state=controller_state,
                                   task_queue=controller_queue,
                                   colour_body=colour_body,
-                                  colour_buttons=colour_buttons)
+                                  colour_buttons=colour_buttons,
+                                  frequency=frequency,)
         controller = Process(target=server.run, args=(reconnect_address,))
         controller.daemon = True
         self._children[index] = controller

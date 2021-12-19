@@ -20,11 +20,13 @@ class ControllerServer():
 
     def __init__(self, controller_type, adapter_path="/org/bluez/hci0",
                  state=None, task_queue=None, lock=None, colour_body=None,
-                 colour_buttons=None):
+                 colour_buttons=None, frequency=66):
 
         self.logger = logging.getLogger('nxbt')
         # Cache logging level to increase performance on checks
         self.logger_level = self.logger.level
+
+        self.frequency = frequency
 
         atexit.register(self._on_exit)
 
@@ -119,6 +121,8 @@ class ControllerServer():
     def mainloop(self, itr, ctrl):
 
         duration_start = time.perf_counter()
+        period = 1 / self.frequency
+        t = time.perf_counter()
         while True:
             # Start timing command processing
             timer_start = time.perf_counter()
@@ -129,6 +133,8 @@ class ControllerServer():
                 if len(reply) > 40:
                     self.logger.debug(format_msg_switch(reply))
             except BlockingIOError:
+                reply = None
+            except ConnectionAbortedError:
                 reply = None
 
             # Getting any inputs from the task queue
@@ -181,9 +187,9 @@ class ControllerServer():
             duration_elapsed = duration_end - duration_start
             duration_start = duration_end
             
-            sleep_time = 1/132 - duration_elapsed
-            if sleep_time >= 0:
-                time.sleep(sleep_time)
+            t += period
+            time.sleep(max(0,t-time.perf_counter()))
+
             self.tick += 1
 
             if self.logger_level <= logging.DEBUG:
@@ -305,6 +311,19 @@ class ControllerServer():
         connected_devices = []
         connected_devices_count = {}
         while self._crw_running:
+            # Check that the adapter is still discoverable
+            if not self.bt.discoverable:
+                # If not, ensure it's powered, pariable and visible.
+                # This action needs to be undertaken due to systemctl
+                # performing a delayed reset of the adapter when
+                # restarting the Bluetooth daemon.
+                time.sleep(0.75) # Wait for systemctl to disable all properties
+                self.bt.set_powered(True)
+                self.bt.set_pairable(True)
+                self.bt.set_pairable_timeout(0)
+                self.bt.set_discoverable(True)
+                self.bt.set_class("0x02508")
+
             paths = self.bt.find_connected_devices(alias_filter="Nintendo Switch")
             # Keep track of Switches that connect
             if len(paths) > 0:

@@ -79,7 +79,9 @@ def on_create_controller():
 
     try:
         reconnect_addresses = nxbt.get_switch_addresses()
-        index = nxbt.create_controller(PRO_CONTROLLER, reconnect_address=reconnect_addresses)
+        index = nxbt.create_controller(PRO_CONTROLLER,
+                                       reconnect_address=reconnect_addresses,
+                                       frequency=132)
 
         with user_info_lock:
             USER_INFO[request.sid]["controller_index"] = index
