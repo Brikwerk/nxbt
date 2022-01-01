@@ -109,6 +109,14 @@ def toggle_clean_bluez(toggle):
     :raises Exception: If sdptool, hciconfig, or hcitool are not available.
     """
 
+    logger = logging.getLogger('nxbt')
+
+    # Check systemd is present
+    res = _run_command(["ps", "--no-headers", "-o", "comm", "1"])
+    if res.stdout.decode("utf-8").strip() != "systemd":
+        logger.debug("systemd not found")
+        return
+
     service_path = "/lib/systemd/system/bluetooth.service"
     override_dir = Path("/run/systemd/system/bluetooth.service.d")
     override_path = override_dir / "nxbt.conf"
@@ -146,6 +154,8 @@ def toggle_clean_bluez(toggle):
 
     # Kill a bit of time here to ensure all services have restarted
     time.sleep(0.5)
+
+    logger.debug("systemd found and bluetooth reloaded")
 
 
 def clean_sdp_records():
