@@ -227,7 +227,7 @@ class Nxbt():
         cm = _ControllerManager(state, self._bluetooth_lock)
         # Ensure a SystemExit exception is raised on SIGTERM
         # so that we can gracefully shutdown.
-        signal.signal(signal.SIGTERM, lambda sigterm_handler: sys.exit(0))
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
 
         try:
             while True:
