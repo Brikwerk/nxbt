@@ -110,11 +110,13 @@ def toggle_clean_bluez(toggle):
     """
 
     service_path = "/lib/systemd/system/bluetooth.service"
-    override_dir = Path("/run/systemd/system/bluetooth.service.d")
-    override_path = override_dir / "nxbt.conf"
+    runtime_override_dir = Path("/run/systemd/system/bluetooth.service.d")
+    permanent_override_dir = Path("/etc/systemd/system/bluetooth.service.d")
+    runtime_override_path = runtime_override_dir / "nxbt.conf"
+    permanent_override_path = permanent_override_dir / "nxbt.conf"
 
     if toggle:
-        if override_path.is_file():
+        if runtime_override_path.is_file() or permanent_override_path.is_file():
             # Override exist, no need to restart bluetooth
             return
 
@@ -128,12 +130,12 @@ def toggle_clean_bluez(toggle):
 
         override = f"[Service]\nExecStart=\n{exec_start}"
 
-        override_dir.mkdir(parents=True, exist_ok=True)
-        with override_path.open("w") as f:
+        runtime_override_dir.mkdir(parents=True, exist_ok=True)
+        with runtime_override_path.open("w") as f:
             f.write(override)
     else:
         try:
-            os.remove(override_path)
+            os.remove(runtime_override_path)
         except FileNotFoundError:
             # Override doesn't exist, no need to restart bluetooth
             return
