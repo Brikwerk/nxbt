@@ -275,7 +275,7 @@ def macro():
     reconnect_target = get_reconnect_target()
 
     nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
-    print("Creating controller (frequency = 132)...")
+    print("Creating controller...")
     index = nx.create_controller(
         PRO_CONTROLLER,
         colour_body=random_colour(),

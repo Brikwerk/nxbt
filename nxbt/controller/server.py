@@ -120,12 +120,13 @@ class ControllerServer():
 
     def mainloop(self, itr, ctrl):
 
-        duration_start = time.perf_counter()
+        duration_start = time.perf_counter_ns()
         period = 1 / self.frequency
-        t = time.perf_counter()
+        period_ns = int(period * 1_000_000_000)
+        t = time.perf_counter_ns()
         while True:
             # Start timing command processing
-            timer_start = time.perf_counter()
+            timer_start = time.perf_counter_ns()
 
             # Attempt to get output from Switch
             try:
@@ -183,12 +184,15 @@ class ControllerServer():
                 itr, ctrl = self.save_connection(e)
 
             # Figure out how long it took to process commands
-            duration_end = time.perf_counter()
+            duration_end = time.perf_counter_ns()
             duration_elapsed = duration_end - duration_start
             duration_start = duration_end
             
-            t += period
-            time.sleep(max(0,t-time.perf_counter()))
+            t += period_ns
+            #time.sleep(max(0,t-time.perf_counter()))
+            while True:
+                if time.perf_counter_ns() > t:
+                    break
 
             self.tick += 1
 
