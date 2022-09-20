@@ -275,12 +275,13 @@ def macro():
     reconnect_target = get_reconnect_target()
 
     nx = Nxbt(debug=args.debug, log_to_file=args.logfile)
-    print("Creating controller...")
+    print("Creating controller (frequency = 132)...")
     index = nx.create_controller(
         PRO_CONTROLLER,
         colour_body=random_colour(),
         colour_buttons=random_colour(),
-        reconnect_address=reconnect_target)
+        reconnect_address=reconnect_target,
+        frequency=132)
     print("Waiting for connection...")
     nx.wait_for_connection(index)
     print("Connected!")
