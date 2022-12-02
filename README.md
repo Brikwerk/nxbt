@@ -307,7 +307,7 @@ nx.clear_all_macros()
 
 ### My controller disconnects after exiting the "Change Grip/Order" Menu
 
-This can occasionally occur due to timing sensitivites when transitioning off of the "Change Grip/Order" menu. To avoid disconnections when exiting this menu, please only press A (or B) a single time and wait until the menu has fully exited. If a disconnect still occurs, you should be able to reconnect your controller and use NXBT as normal.
+This can occasionally occur due to timing sensitivities when transitioning off of the "Change Grip/Order" menu. To avoid disconnections when exiting this menu, please only press A (or B) a single time and wait until the menu has fully exited. If a disconnect still occurs, you should be able to reconnect your controller and use NXBT as normal.
 
 ### "No Available Adapters"
 
@@ -316,7 +316,7 @@ This means that NXBT wasn't able to find a suitable Bluetooth adapter to use for
 1. **Cause:** All available adapters are currently emulating a controller.
   - **Solution:** End one of the other controller sessions (either through the webapp or command line) or plug in another Bluetooth adapter.
 2. **Cause:** No Bluetooth adapters are available to NXBT.
-  - **Solution:** Ensure that you've installed the relevant Bluetooth stack for your operating system (BlueZ on Linux) and check that your Bluetooh adapter is visible within to your OS.
+  - **Solution:** Ensure that you've installed the relevant Bluetooth stack for your operating system (BlueZ on Linux) and check that your Bluetooth adapter is visible within to your OS.
 
 ### "Address already in use"
 
