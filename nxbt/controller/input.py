@@ -250,9 +250,9 @@ class InputParser():
 
         # Shared byte
         if controller_input["MINUS"]:
-            shared[7] = '1'
-        if controller_input["PLUS"]:
             shared[6] = '1'
+        if controller_input["PLUS"]:
+            shared[7] = '1'
         if controller_input["R_STICK"]["PRESSED"]:
             shared[5] = '1'
         if controller_input["L_STICK"]["PRESSED"]:
