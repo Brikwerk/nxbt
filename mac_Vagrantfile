@@ -1,0 +1,27 @@
+Vagrant.configure("2") do |config|
+    # This VM seemingly has poor support for bluetooth.
+    # May need to recompile a custom VM from Ubuntu for ARM
+    # since VMWare works on Ubuntu ARM server.
+    config.vm.box = "perk/ubuntu-2204-arm64"
+
+    # Note: Samba sharing needs to be setup before this will work.
+    # If Samba-based sharing doesn't work, comment out the below line
+    # and uncomment the next line that uses rsync.
+    config.vm.synced_folder ".", "/vagrant", type: "smb"
+    # config.vm.synced_folder ".", "/vagrant", type: "rsync"
+
+    config.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y python3-pip pkg-config build-essential libdbus-glib-1-dev libgirepository1.0-dev
+    #   cd /vagrant && pip3 install -r requirements.txt
+    SHELL
+
+    # If you get a non-descript Obj-C error, export the following before trying again
+    # export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+    # export DISABLE_SPRING=true
+    config.vm.provider "qemu" do |qe|
+        # Mount an external USB, currently hardcoded for my Plugable Bluetooth USB
+        qe.extra_qemu_args = %w(-device qemu-xhci,id=xhci -device usb-host,bus=xhci.0,vendorid=0x0a5c,productid=0x21e8)
+        # qe.extra_qemu_args = %w(-device usb-ehci,id=ehci -device usb-host,bus=ehci.0,vendorid=0x0a5c,productid=0x21e8)
+    end
+end
