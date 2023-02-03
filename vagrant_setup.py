@@ -23,13 +23,13 @@ def get_usb_devices():
         product = find_line_items("Product", device)
 
         if (len(productid) < 1 or len(vendorid) < 1 or 
-                len(manufacturer) < 1 or len(product) < 1):
+                len(manufacturer) < 1):
             continue
 
         productid = productid[0]
         vendorid = vendorid[0]
         manufacturer = manufacturer[0]
-        product = product[0]
+        product = product[0] if product != [] else ""
 
         if len(productid) != 13 or len(vendorid) != 13:
             continue
@@ -38,7 +38,8 @@ def get_usb_devices():
             'product': product,
             'manufacturer': manufacturer,
             'productid': productid[8:12],
-            'vendorid': vendorid[8:12]
+            'vendorid': vendorid[8:12],
+            'name': f"{product} ({manufacturer})" if product else manufacturer,
         })
     
     return devices
@@ -87,7 +88,7 @@ if __name__ == "__main__":
     print("---")
     devices = get_usb_devices()
     for i, device in enumerate(devices):
-        print(f"{i:3}. {device['product']} ({device['manufacturer']})")
+        print(f"{i:3}. {device['name']}")
     print()
 
     # Choose a USB Bluetooth adapter
@@ -119,9 +120,11 @@ if __name__ == "__main__":
 
     vb_usb_filter = f"""vb.customize ["usbfilter", "add", "0",
         "--target", :id,
-        "--name", "{adapter_info['product']} ({adapter_info['manufacturer']})",
-        "--product", "{adapter_info['product']}",
-        "--manufacturer", "{adapter_info['manufacturer']}",
+        "--name", "{adapter_info['name']}","""
+    if adapter_info['product']:
+        vb_usb_filter += f"""
+        "--product", "{adapter_info['product']}","""
+    vb_usb_filter += f"""
         "--productid", "{adapter_info['productid']}",
         "--vendorid", "{adapter_info['vendorid']}",]"""
     vagrantfile = vagrantfile.replace("{{USB_FILTER}}", vb_usb_filter)

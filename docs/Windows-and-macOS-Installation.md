@@ -6,8 +6,8 @@ To support the necessary Bluetooth APIs leveraged within NXBT, installation with
 
 Before continuing, please ensure you have the following:
 
-- A **USB** Bluetooth Adapter
-    - Internal Bluetooth adapters are incompatible (generally) with the process that allows a VM to use external resources.
+- A **USB** Bluetooth Adapter (for macOS)
+    - For internal Bluetooth adapters, Windows machines (generally) support disabling Bluetooth for themselves and allowing a VM to capture it, but macOS machines generally don't allow their own Bluetooth to be disabled and captured.
 - VirtualBox v6 or above
     - If you don't have this, you can install VirtualBox [here](https://www.virtualbox.org/wiki/Downloads)
 - VirtualBox Extension Pack
@@ -33,7 +33,7 @@ Additionally, please ensure that VBoxManage (a CLI that ships with VirtualBox) i
     python3 vagrant_setup.py
     ```
 
-3. Follow the tool's directions and choose the USB Bluetooth adapter you would like to use with NXBT. Additionally, you'll be able to choose between intalling NXBT from PyPi or from the cloned repository. Installing NXBT from the cloned repository allows for use of development version (as well as editing NXBT itself)
+3. Follow the tool's directions and choose the Bluetooth adapter you would like to use with NXBT. Additionally, you'll be able to choose between installing NXBT from PyPi or from the cloned repository. Installing NXBT from the cloned repository allows for use of development version (as well as editing NXBT itself)
 
 4. Once the Vagrant setup tool is finished, you should see a file called `Vagrantfile` located in the same directory as the setup tool. You should now be able to boot the VM with the following command:
 
@@ -48,14 +48,14 @@ Additionally, please ensure that VBoxManage (a CLI that ships with VirtualBox) i
     vagrant ssh
     ```
 
-6. Unplug the USB Bluetooth adapter from your machine and plug it back in. The allows for VirtualBox to properly claim and forward to the USB into the Vagrant VM.
+6. If you are using a USB Bluetooth adapter, unplug it from your machine and plug it back in. This allows for VirtualBox to properly claim and forward the USB into the Vagrant VM. If you are using an internal Bluetooth adapter on Windows, go into Device Manager -> Bluetooth and toggle it (disable/enable). (Bluetooth should then completely disappear from the Device Manager menu, indicating that the VM has captured it.)
 
 7. Inside the VirtualBox, check that your Bluetooth Adapter is available with `lsusb`:
 
     ```bash
     > lsusb
     # Something like the following will be printed
-    # if your USB Bluetooth adapter is available:
+    # if your Bluetooth adapter is available:
     Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
     Bus 002 Device 002: ID 0a5c:21e9 Broadcom Corp. BCM20702A0 Bluetooth 4.0
     Bus 002 Device 001: ID 1d6b:0001 Linux Foundation 1.1 root hub
@@ -104,3 +104,7 @@ First, halt your VM (`vagrant halt`) and unplug your adapter. Next, restart the 
 ### My adapter appears but Bluetooth isn't functional
 
 Typically, restarting the VM resolves the issue. Make sure you unplug the adapter and plug it back in when the VM has fully booted (AKA when it's possible to SSH into it).
+
+### Windows internal Bluetooth adapter doesn't work inside the VM / disappears from Device Manager even with the VM off / etc.
+
+Try hard restarting your Windows machine (i.e. hold down the power button until it powers off). Note that selecting Shut down from the Start menu doesn't actually perform a full shutdown as Windows attempts to save some resources for faster startup.
