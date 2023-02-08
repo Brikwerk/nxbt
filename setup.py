@@ -12,7 +12,7 @@ setup(
         "blessed==1.17.10",
         "pynput==1.7.1",
         "psutil==5.6.6",
-        "cryptography==3.3.2",
+        "cryptography==39.0.1",
     ],
     extra_require={
         "dev": [
