@@ -51,7 +51,7 @@ button {
     margin: auto;
     font-weight: 700;
     text-transform: uppercase;
-    display: block;
+    display: inline-block;
     -webkit-appearance: none;
     background-color: #d9dada;
     font-size: 0.9rem;
@@ -493,7 +493,7 @@ Controller Config Stying
 }
 
 .controller-config-subsection button {
-    width: 100%;
+    width: 30%;
     margin-bottom: 0.25rem;
     margin-left: auto;
     margin-right: auto;
