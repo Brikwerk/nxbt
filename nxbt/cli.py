@@ -280,7 +280,8 @@ def macro():
         PRO_CONTROLLER,
         colour_body=random_colour(),
         colour_buttons=random_colour(),
-        reconnect_address=reconnect_target)
+        reconnect_address=reconnect_target,
+        frequency=132)
     print("Waiting for connection...")
     nx.wait_for_connection(index)
     print("Connected!")
