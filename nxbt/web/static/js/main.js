@@ -216,6 +216,10 @@ socket.on('error', function(errorMessage) {
     displayError(errorMessage);
 });
 
+socket.on('loadmacro', function (macro) {
+    HTML_MACRO_TEXT.value = macro;
+});
+
 /**********************************************/
 /* Listeners and Startup Functionality */
 /**********************************************/
@@ -224,9 +228,19 @@ socket.on('error', function(errorMessage) {
 window.onload = function() {
     // Run the Loader animation
     setInterval(updateLoader, 85);
+    HTML_MACRO_TEXT.value = getCookie('last_macro');
     // // Print out the latency of setTimeout
     // measureTimeoutLatency.start(120, 60);
 }
+
+// returns the cookie with the given name,
+// or undefined if not found
+function getCookie(name) {
+    let matches = document.cookie.match(new RegExp(
+      "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+    ));
+    return matches ? decodeURIComponent(matches[1]) : undefined;
+  }
 
 // Keydown listener
 function globalKeydownHandler(evt) {
@@ -644,6 +658,9 @@ function eventLoop() {
 
 function sendMacro() {
     let macro = HTML_MACRO_TEXT.value.toUpperCase();
+    let expires = (new Date(Date.now()+ 86400*1000*90)).toUTCString();
+    // works for small macros. Cookie won't be set if its size exceeds 4096 bytes
+    document.cookie = "last_macro" + "=" + encodeURIComponent(macro) + "; expires=" + expires + "; path=/";
     socket.emit('macro', JSON.stringify([NXBT_CONTROLLER_INDEX, macro]));
 }
 

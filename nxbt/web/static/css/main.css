@@ -87,6 +87,24 @@ button:hover {
     text-align: left;
 }
 
+input[type=file] { 
+    width: 80%; border: 2px;
+    display: inline-block;
+}
+
+input[type=submit] { 
+    color: #1a1f28;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: auto;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+    -webkit-appearance: none;
+    background-color: #d9dada;
+    font-size: 0.9rem;
+}
+
 /**************************************************
 Top Bar Stying
 **************************************************/

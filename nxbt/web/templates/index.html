@@ -204,6 +204,8 @@
                         <strong>Note:</strong> the main input device will override a running
                         macro.
                     </p>
+                    <form method="POST" action="" enctype="multipart/form-data"><div><input type="file" name="file"><input type="submit" value="Submit"></div>
+                    </form>
                     <textarea id="macro-text" class="mono" placeholder="Type Your Macro Here" onfocus="disableKeyHandlers()" onblur="enableKeyHandlers()"></textarea>
                     <button onclick="sendMacro()">Run Macro</button>
                     <button onclick="stopMacro()">Stop Macro</button>
