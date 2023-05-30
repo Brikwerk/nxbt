@@ -6,7 +6,7 @@
   <br>
 </h1>
 
-<h4 align="center">Control your Nintendo Switch through a website, terminal, or macro.</h4>
+<h4 align="center">Fork of Brikwerk's "NXBT" Nintendo Switch Bluetooth Controller Replicator.</h4>
 
 <div align="center">
 
@@ -28,9 +28,12 @@
 
 ![screenshot](https://raw.githubusercontent.com/Brikwerk/nxbt/master/docs/img/nxbt-example.png)
 
+## Differences
+This fork fixes some dependancies and assets required by the original NXBT. This fork will soon also fix the NXBT Webapp to consistently connect to your Nintendo Switch. 
+
 ## Key Features
 
-- Use your favourite web browser to control a Nintendo Switch with any keyboard or gamepad.
+- (IN-FIX) Use your favourite web browser to control a Nintendo Switch with any keyboard or gamepad.
 - Use your terminal to control a Nintendo Switch with a keyboard.
 - Use a macro from your terminal, browser, or Python script
 - Use the NXBT Python API to write programs to control your Nintendo Switch.
@@ -38,14 +41,16 @@
 - In-depth command line interface.
 - Support for emulating multiple controllers at once.
 - Support for fast connection or reconnection to a Nintendo Switch.
-- Emulated ontrollers support thread-safe access.
+- Emulated controllers support thread-safe access.
 
 ## Installation
 
 ### Linux
 
+Download the `.zip` file and extract it into a folder. Open the terminal (right click while inside the folder) and run the following:
+
 ```bash
-sudo pip3 install nxbt
+sudo pip3 install .
 ```
 
 **Please Note:** NXBT needs root privileges to toggle the BlueZ Input plugin. If you're not comfortable running this program as root, you can disable the Input plugin manually, and install NXBT as a regular user.
@@ -72,7 +77,7 @@ sudo nxbt demo
 
 If all is working correctly, the controller should connect, navigate to the settings, test the stick calibration, and navigate back to the "Change Grip/Order Menu".
 
-## Using the Webapp
+## Using the Webapp (IN-FIX)
 
 The NXBT webapp provides a web interface that allows for quick creation of a Nintendo Switch controller and use of a keyboard or gamepad to control the Nintendo Switch. This lets anyone who can access the website control a Nintendo Switch with their favourite keyboard or gamepad.
 
@@ -107,7 +112,7 @@ Here, you can change your input method, shutdown or restart the controller, and 
 A few other functions to note:
 - If you exit the webpage, the controller will shutdown.
 - Once you've connected over the "Change Grip/Order Menu", NXBT will automatically reconnect. This applies on a per-Bluetooth-adapter basis.
-- Most gamepads should be usable over the browser. To get started with a gamepad, click a button and it should show up under the input dropdown list. If it doesn't show up, try another browser. Chrome is the recommended standard as it seems to have the best gamepad support currently (as of September 2020)
+- Most gamepads should be usable over the browser. To get started with a gamepad, click a button and it should show up under the input dropdown list. If it doesn't show up, try another browser. Chrome is the recommended standard as it seems to have the best gamepad support currently (as of May 2023) although Opera and Edge will sufice as well.
 
 ## Using the TUI
 
@@ -345,6 +350,7 @@ This means that another service has already bound itself to the Control and Inte
 
 ## Credits
 
+The Original Author of NXBT, Brikwerk. (https://github.com/Brikwerk)
 A big thank you goes out to all the contributors at the [dekuNukem/Nintendo_Switch_Reverse_Engineering](https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering) repository! Almost all information pertaining to the innerworkings of the Nintendo Switch Controllers comes from the documentation in that repo. Without it, NXBT wouldn't have been possible.
 
 ## License
