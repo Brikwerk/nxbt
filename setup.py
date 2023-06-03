@@ -12,6 +12,8 @@ setup(
         "pynput==1.7.1",
         "psutil==5.6.6",
         "cryptography==3.3.2",
+        "jinja2==3.0.3",
+        "itsdangerous==2.0.1",
         "Werkzeug==2.0.3",
     ],
     extra_require={
