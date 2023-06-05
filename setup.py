@@ -5,6 +5,7 @@ setup(
     include_package_data=True,
     long_description_content_type="text/markdown",
     install_requires=[
+        "dbus-python==1.2.16",
         "Flask==2.1.3",
         "Flask-SocketIO==4.3.1",
         "eventlet==0.33.3",
