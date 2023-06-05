@@ -44,7 +44,11 @@
 
 ### Linux
 
+Execute each line one at a time. 
+
 ```bash
+sudo apt-get install -qy git python3-pip libglib2.0-dev libhidapi-hidraw0 libhidapi-libusb0 libdbus-1-dev
+sudo pip3 install hid aioconsole crc8 dbus-python
 sudo pip3 install nxbt
 ```
 
