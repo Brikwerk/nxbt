@@ -44,11 +44,7 @@
 
 ### Linux
 
-Execute each line one at a time. 
-
 ```bash
-sudo apt-get install -qy git python3-pip libglib2.0-dev libhidapi-hidraw0 libhidapi-libusb0 libdbus-1-dev
-sudo pip3 install hid aioconsole crc8 dbus-python
 sudo pip3 install nxbt
 ```
 
@@ -308,6 +304,14 @@ nx.clear_all_macros()
 ```
 
 ## Troubleshooting
+
+### I get an error when installing the `dbus-python` package
+
+This error can occur due to missing dbus-related libraries on some Linux distributions. To fix this in most cases, `libdbus-glib-1-dev` and `libdbus-1-dev` need to be installed with your system's package manager. For systems using aptitude for package management (Ubuntu, Debian, etc), installation instructions follow:
+
+```bash
+sudo apt-get install libdbus-glib-1-dev libdbus-1-dev
+```
 
 ### My controller disconnects after exiting the "Change Grip/Order" Menu
 
