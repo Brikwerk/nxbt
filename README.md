@@ -305,6 +305,14 @@ nx.clear_all_macros()
 
 ## Troubleshooting
 
+### I get an error when installing the `dbus-python` package
+
+This error can occur due to missing dbus-related libraries on some Linux distributions. To fix this in most cases, `libdbus-glib-1-dev` and `libdbus-1-dev` need to be installed with your system's package manager. For systems using aptitude for package management (Ubuntu, Debian, etc), installation instructions follow:
+
+```bash
+sudo apt-get install libdbus-glib-1-dev libdbus-1-dev
+```
+
 ### My controller disconnects after exiting the "Change Grip/Order" Menu
 
 This can occasionally occur due to timing sensitivites when transitioning off of the "Change Grip/Order" menu. To avoid disconnections when exiting this menu, please only press A (or B) a single time and wait until the menu has fully exited. If a disconnect still occurs, you should be able to reconnect your controller and use NXBT as normal.
