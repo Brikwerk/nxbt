@@ -38,7 +38,7 @@ L_STICK@-100+000 0.75s
 1.0s
 ```
 
-Above, we're setting the left analog stick to 100% in the left horizontal direction. To explain, analog stick positions are composed of two values: and X position and Y position. You can think of both as positions on a traditional X/Y plane, with X being the horizontal component and Y being the vertical component. An X/Y of 0/0 means that the analog stick is in a neutral position (no input), while an X/Y position of 0/100 means our stick is tilted 100% up.
+Above, we're setting the left analog stick to 100% in the left horizontal direction. To explain, analog stick positions are composed of two values: an X position and a Y position. You can think of both as positions on a traditional X/Y plane, with X being the horizontal component and Y being the vertical component. An X/Y of 0/0 means that the analog stick is in a neutral position (no input), while an X/Y position of 0/100 means our stick is tilted 100% up.
 
 <div align="center">
   <img src="img/pro-controller-stick-axis.jpg" width="300">
@@ -52,6 +52,8 @@ As such, a neutral stick position is as follows:
 L_STICK@+000+000 0.75s
 1.0s
 ```
+
+Remember, each X and Y value must be 3 digits. If you want to tilt the Right Thumbstick 75% to the left, you must write it as `R_STICK@-075+000`. Another thing to keep in mind, the sum of your X and Y can be more than 100. For example, `L_STICK@+100+100` is a 45° angle. 
 
 ## Macro Control Values
 
