@@ -381,7 +381,7 @@ function createProController() {
     HTML_CONTROLLER_SELECTION.classList.add('hidden');
     HTML_LOADER.classList.remove('hidden');
 
-    socket.emit('create_pro_controller');
+    socket.emit('web_create_pro_controller');
 }
 
 function shutdownController() {
