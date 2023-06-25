@@ -73,7 +73,7 @@ def on_shutdown(index):
     nxbt.remove_controller(index)
 
 
-@sio.on('create_pro_controller')
+@sio.on('web_create_pro_controller')
 def on_create_controller():
     print("Create Controller")
 
