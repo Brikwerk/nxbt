@@ -7,7 +7,7 @@ setup(
     install_requires=[
         "dbus-python==1.2.16",
         "Flask==2.1.3",
-        "Flask-SocketIO==4.3.1",
+        "Flask-SocketIO==5.3.4",
         "eventlet==0.33.3",
         "blessed==1.17.10",
         "pynput==1.7.1",
